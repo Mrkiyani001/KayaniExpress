@@ -1,0 +1,42 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
+
+class BaseController extends Controller
+{
+    public function ValidateRequest(Request $request, array $rules)
+    {
+        $validator = Validator::make($request->all(), $rules);
+        if ($validator->fails()) {
+            abort( response()->json([       // we use abort for 422 error and return response()->json.
+                'message' => 'Validation failed',
+                'errors' => $validator->errors(),
+            ], 422));
+        }
+    }
+    public function unauthorized()
+    {
+        return response()->json([
+            'message' => 'Unauthorized',
+        ], 401);
+    }
+    public function Response($status, $message, $data = null, $code)
+    {
+       return response()->json([
+           'status' => $status,
+           'message' => $message,
+           'data' => $data,
+       ], $code);
+    }
+    public function ResponseWithToken($token)
+    {
+       return response()->json([
+        'token' => $token,
+        'token_type' => 'bearer',   
+        'expires_in' => auth('api')->factoryTtl() * 360000,
+       ]);
+    }
+}
