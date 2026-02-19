@@ -36,7 +36,13 @@ class BaseController extends Controller
        return response()->json([
         'token' => $token,
         'token_type' => 'bearer',   
-        'expires_in' => auth('api')->factoryTtl() * 360000,
+        'expires_in' => auth('api')->factory()->getTtl() * 36000,
        ]);
+    }
+    public function NotAllowed()
+    {
+        return response()->json([
+            'message' => 'You are not allowed to Perform these Activities',
+        ], 403);
     }
 }

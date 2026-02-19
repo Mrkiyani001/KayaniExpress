@@ -12,8 +12,25 @@ return Application::configure(basePath: dirname(__DIR__))
         api: __DIR__.'/../routes/api.php',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        $middleware->redirectGuestsTo(function (\Illuminate\Http\Request $request) {
+            if ($request->is('api/*')) {
+                return null;
+            }
+        });
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        $exceptions->render(function (\Illuminate\Auth\AuthenticationException $e, \Illuminate\Http\Request $request) {
+            if($request->is('api/*')){
+                return response()->json([
+                    'message' => $e->getMessage(),
+                ], 401);
+            }
+        });
+        $exceptions->render(function(\Symfony\Component\HttpKernel\Exception\NotFoundHttpException $e, \Illuminate\Http\Request $request){
+            if($request->is('api/*')){
+                return response()->json([
+                    'message' => $e->getMessage(),
+                ], 404);
+            }
+        });
     })->create();
