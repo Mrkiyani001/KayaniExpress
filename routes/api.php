@@ -15,11 +15,26 @@ Route::group(['middleware' => 'auth:api'], function () {
     Route::get('refresh/token', [AuthController::class, 'RefreshToken']);
     Route::post('change/password', [AuthController::class, 'changepassword']); // Keeping original casing as seen in AuthController
     
-    // Role Management Routes
+    // Role & Permission Management Routes
     Route::prefix('role')->group(function () {
+        Route::get('/all', [RolesController::class, 'getAllRoles']);
         Route::post('/create', [RolesController::class, 'createRole']);
         Route::post('/delete', [RolesController::class, 'deleteRole']);
         Route::post('/assign', [RolesController::class, 'assignRole']);
         Route::post('/unassign', [RolesController::class, 'unassignRole']);
+        
+        Route::prefix('permission')->group(function () {
+            Route::post('/assign', [RolesController::class, 'assignPermissionToRole']);
+            Route::post('/remove', [RolesController::class, 'removePermissionFromRole']);
+            Route::post('/update', [RolesController::class, 'updatePermissionForRole']);
+        });
     });
+
+    Route::prefix('permission')->group(function () {
+        Route::get('/all', [RolesController::class, 'getAllPermissions']);
+        Route::post('/create', [RolesController::class, 'createPermission']);
+        Route::post('/delete', [RolesController::class, 'deletePermission']);
+    });
+
+    Route::get('user/roles-permissions', [RolesController::class, 'getUserRolePermission']);
 });
