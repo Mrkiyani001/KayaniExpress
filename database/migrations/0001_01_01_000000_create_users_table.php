@@ -21,7 +21,7 @@ return new class extends Migration
             $table->string('otp')->nullable();
             $table->timestamp('otp_expires_at')->nullable();
             $table->boolean('is_verified')->default(false);
-            $table->enum('role', ['admin', 'user','seller'])->default('user');
+            $table->foreignId('role_id')->nullable();
             $table->rememberToken();
             $table->timestamps();
         });

@@ -14,13 +14,17 @@ class RoleSeeder extends Seeder
      */
     public function run(): void
     {
-        $role = Role::firstOrCreate(['name' => 'Admin' , 'guard_name' => 'api']);
+        // Super Admin - has all permissions
+        $role = Role::firstOrCreate(['name' => 'Super Admin', 'guard_name' => 'api']);
         $role->givePermissionTo(Permission::all());
 
-        $role = Role::firstOrCreate(['name' => 'Seller' , 'guard_name' => 'api']);
-        $role->givePermissionTo(Permission::all());
+        // Admin - permissions assign manually
+        Role::firstOrCreate(['name' => 'Admin', 'guard_name' => 'api']);
 
-        $role = Role::firstOrCreate(['name' => 'Customer' , 'guard_name' => 'api']);
-        $role->givePermissionTo(Permission::all());
+        // Seller - permissions assign manually
+        Role::firstOrCreate(['name' => 'Seller', 'guard_name' => 'api']);
+
+        // Customer - permissions assign manually
+        Role::firstOrCreate(['name' => 'Customer', 'guard_name' => 'api']);
     }
 }

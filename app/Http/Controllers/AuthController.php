@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use App\Notifications\SendOtpNotification;
 use Illuminate\Support\Facades\Log;
+use Spatie\Permission\Models\Role;
 
 class AuthController extends BaseController
 {
@@ -28,6 +29,7 @@ class AuthController extends BaseController
             'email' => $request->email,
             'phone' => $request->phone,
             'password' => Hash::make($request->password),
+            'role_id' => Role::where('name', 'Customer')->first()->id,
             'otp' => $otp,
             'otp_expires_at' => now()->addMinutes(10),
         ]);
@@ -41,6 +43,7 @@ class AuthController extends BaseController
         }
 
         DB::commit();
+        $user->load('role');
         return $this->Response('success', 'User created successfully', ['user' => $user, 'otp' => $otp], 200);
     }
     catch(Exception $e){
@@ -81,6 +84,7 @@ class AuthController extends BaseController
             $user->save();
             DB::commit();
             $token = auth('api')->login($user);
+            $user->load('role');
             return $this->Response('success', 'User verified successfully', ['user' => $user, 'token' => $token], 200);
         }
         catch(Exception $e){
@@ -155,8 +159,8 @@ class AuthController extends BaseController
                  return $this->Response('error', 'User not verified', null, 403);
             }
             $token = auth('api')->login($user);
-            $user->assignRole('user');
-            return $this->ResponseWithToken($token);
+            $user->load('role');
+            return $this->ResponseWithToken($token, $user);
         }
         catch(Exception $e){
             return $this->Response('error', 'Login failed', $e->getMessage(), 500);

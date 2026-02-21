@@ -11,7 +11,7 @@ class BaseController extends Controller
     {
         $validator = Validator::make($request->all(), $rules);
         if ($validator->fails()) {
-            abort( response()->json([       // we use abort for 422 error and return response()->json.
+            abort(response()->json([       // we use abort for 422 error and return response()->json.
                 'message' => 'Validation failed',
                 'errors' => $validator->errors(),
             ], 422));
@@ -25,19 +25,20 @@ class BaseController extends Controller
     }
     public function Response($status, $message, $data = null, $code)
     {
-       return response()->json([
-           'status' => $status,
-           'message' => $message,
-           'data' => $data,
-       ], $code);
+        return response()->json([
+            'status' => $status,
+            'message' => $message,
+            'data' => $data,
+        ], $code);
     }
-    public function ResponseWithToken($token)
+    public function ResponseWithToken($token, $user = null)
     {
-       return response()->json([
-        'token' => $token,
-        'token_type' => 'bearer',   
-        'expires_in' => auth('api')->factory()->getTtl() * 36000,
-       ]);
+        return response()->json([
+            'token' => $token,
+            'token_type' => 'bearer',
+            'expires_in' => auth('api')->factory()->getTtl() * 36000,
+            'user' => $user,
+        ]);
     }
     public function NotAllowed()
     {
