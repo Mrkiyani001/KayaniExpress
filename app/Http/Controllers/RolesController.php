@@ -130,8 +130,6 @@ class RolesController extends BaseController
                 return $this->NotAllowed();
             }
             $targetUser->removeRole($request->role);
-
-            // Ensure user has at least one role, default to 'user' if none left
             if ($targetUser->roles()->count() == 0) {
                 $targetUser->assignRole('Customer');
             }
