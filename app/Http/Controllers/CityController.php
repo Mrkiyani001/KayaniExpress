@@ -84,7 +84,7 @@ public function list(Request $request){
         if(!$user){
             return $this->unauthorized();
         }
-        $cities = City::paginate($limit);
+        $cities = City::where('status', 1)->paginate($limit);
         $data = $this->paginateData($cities, $cities->items());
         return $this->Response(true, 'Cities list', $data, 200);
     }catch(Exception $e){

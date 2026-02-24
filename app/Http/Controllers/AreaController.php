@@ -91,7 +91,10 @@ class AreaController extends BaseController
             if(!$user){
                 return $this->unauthorized();
             }
-            $area = Area::with('city')->where('city_id', $request->city_id)->paginate($limit);
+            $area = Area::with('city')
+            ->where('city_id', $request->city_id)
+            ->where('status', 1)
+            ->paginate($limit);
             $data = $this->PaginateData($area, $area->items());
             return $this->Response(true, 'Area list', $data, 200);
         }catch(Exception $e){
