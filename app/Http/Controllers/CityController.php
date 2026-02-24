@@ -91,4 +91,24 @@ public function list(Request $request){
         return $this->Response(false, 'Cities not found', $e->getMessage(), 500);
     }
 }
+public function city_filter(Request $request){
+    $this->ValidateRequest($request, [
+        'status' => 'required|boolean',
+    ]);
+    try{
+        $user = auth('api')->user();
+        if(!$user){
+            return $this->unauthorized();
+        }
+        $limit = (int)$request->input('limit', 10);
+        if(!$user->hasRole(['Super Admin' , 'Admin'])){
+            return $this->NotAllowed();
+        }
+        $cities = City::where('status', $request->status)->paginate($limit);
+        $data = $this->paginateData($cities, $cities->items());
+        return $this->Response(true, 'Cities list', $data, 200);
+    }catch(Exception $e){
+        return $this->Response(false, 'Cities not found', $e->getMessage(), 500);
+    }
+}
 }

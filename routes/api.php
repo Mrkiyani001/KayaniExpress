@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AreaController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CityController;
 use App\Http\Controllers\RolesController;
@@ -42,6 +43,7 @@ Route::group(['middleware' => 'auth:api'], function () {
 
     
     Route::get('/cities', [CityController::class, 'list']); // can access by any user
+    Route::post('/areas', [AreaController::class, 'city_wise_list']); // can access by any user
 // Admin Routes
     Route::prefix('admin')->group(function () {
     //Cities
@@ -49,7 +51,16 @@ Route::group(['middleware' => 'auth:api'], function () {
         Route::post('/create', [CityController::class, 'create']);
         Route::put('/update', [CityController::class, 'update']);
         Route::delete('/delete', [CityController::class, 'delete']);
+        Route::post('/filter', [CityController::class, 'city_filter']);
         
+    });
+
+    //Areas
+    Route::prefix('area')->group(function () {
+        Route::post('/create', [AreaController::class, 'create']);
+        Route::put('/update', [AreaController::class, 'update']);
+        Route::delete('/delete', [AreaController::class, 'delete']);
+        Route::post('/filter', [AreaController::class, 'area_filter']);
     });
 });
 });
