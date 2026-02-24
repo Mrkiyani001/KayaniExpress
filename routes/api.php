@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\CityController;
 use App\Http\Controllers\RolesController;
 use Illuminate\Support\Facades\Route;
 
@@ -36,4 +37,19 @@ Route::group(['middleware' => 'auth:api'], function () {
     });
 
     Route::post('user/roles-permissions', [RolesController::class, 'getUserRolePermission']);
+
+
+
+    
+    Route::get('/cities', [CityController::class, 'list']); // can access by any user
+// Admin Routes
+    Route::prefix('admin')->group(function () {
+    //Cities
+    Route::prefix('city')->group(function () {
+        Route::post('/create', [CityController::class, 'create']);
+        Route::put('/update', [CityController::class, 'update']);
+        Route::delete('/delete', [CityController::class, 'delete']);
+        
+    });
+});
 });

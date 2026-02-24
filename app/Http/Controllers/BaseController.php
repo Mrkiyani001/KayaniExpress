@@ -46,4 +46,19 @@ class BaseController extends Controller
             'message' => 'You are not allowed to Perform these Activities',
         ], 403);
     }
+
+    public function paginateData($paginate , $data){
+        return [
+            'item'=> $data,
+            'pagination'=>[
+                'total'=> $paginate->total(),
+                'per_page'=> $paginate->perPage(),
+                'current_page'=> $paginate->currentPage(),
+                'last_page'=> $paginate->lastPage(),
+                'from'=> $paginate->firstItem(),
+                'to'=> $paginate->lastItem(),
+                'has_more'=> $paginate->hasMorePages(),
+            ]
+        ];
+    }
 }
