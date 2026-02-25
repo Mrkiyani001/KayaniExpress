@@ -5,6 +5,7 @@ use App\Http\Controllers\AreaController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CityController;
 use App\Http\Controllers\RolesController;
+use App\Http\Controllers\ShopController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('signup', [AuthController::class, 'signup']);
@@ -64,6 +65,15 @@ Route::group(['middleware' => 'auth:api'], function () {
         Route::delete('/delete', [AreaController::class, 'delete']);
         Route::post('/filter', [AreaController::class, 'area_filter']);
     });
+
+    //Shops
+    Route::prefix('shop')->group(function () {
+        Route::post('/approve', [ShopController::class, 'approve']);
+        Route::post('/reject', [ShopController::class, 'reject']);
+        Route::post('/suspend', [ShopController::class, 'suspend']);
+        Route::post('/unsuspend', [ShopController::class, 'unsuspend']);
+        Route::get('/list', [ShopController::class, 'shoplist']);
+    });
 });
 
 //Address Routes
@@ -74,4 +84,12 @@ Route::prefix('address')->group(function () {
     Route::get('/list', [AddressController::class, 'list']);
     Route::put('/set-default', [AddressController::class, 'setDefault']);
 });
+
+//Shop Routes
+Route::prefix('shop')->group(function () {
+    Route::post('/apply', [ShopController::class, 'apply']);
+    Route::get('/myshop', [ShopController::class, 'myshop']);
+    Route::put('/update', [ShopController::class, 'updateShop']);
 });
+});
+Route::get('/shop/{slug}', [ShopController::class, 'shopdetail']);
