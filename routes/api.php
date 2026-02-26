@@ -5,6 +5,7 @@ use App\Http\Controllers\AreaController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CityController;
 use App\Http\Controllers\RolesController;
+use App\Http\Controllers\SellerWalletController;
 use App\Http\Controllers\ShopController;
 use Illuminate\Support\Facades\Route;
 
@@ -90,6 +91,12 @@ Route::prefix('shop')->group(function () {
     Route::post('/apply', [ShopController::class, 'apply']);
     Route::get('/myshop', [ShopController::class, 'myshop']);
     Route::put('/update', [ShopController::class, 'updateShop']);
+});
+
+//Seller Wallet Routes
+Route::prefix('seller/wallet')->group(function () {
+    Route::get('/balance', [SellerWalletController::class, 'balance']);
+    Route::post('/withdraw', [SellerWalletController::class, 'withdraw']);
 });
 });
 Route::get('/shop/{slug}', [ShopController::class, 'shopdetail']);

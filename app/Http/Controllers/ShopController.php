@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\SellerWallet;
 use App\Models\Shop;
 use Exception;
 use Illuminate\Http\Request;
@@ -80,6 +81,9 @@ class ShopController extends BaseController
             $shop->verified_at = now();
             $shop->user->syncRoles('Seller');
             $shop->save();
+            SellerWallet::create([
+                'shop_id' => $shop->id,
+            ]);
             $shop->load('user.roles');
             return $this->Response(true, 'Shop approved successfully',$shop, 200);
         }catch(Exception $e){
