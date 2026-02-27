@@ -3,6 +3,7 @@
 use App\Http\Controllers\AddressController;
 use App\Http\Controllers\AreaController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CityController;
 use App\Http\Controllers\RolesController;
 use App\Http\Controllers\SellerWalletController;
@@ -75,6 +76,13 @@ Route::group(['middleware' => 'auth:api'], function () {
         Route::post('/unsuspend', [ShopController::class, 'unsuspend']);
         Route::get('/list', [ShopController::class, 'shoplist']);
     });
+
+    //Categories
+    Route::prefix('category')->group(function () {
+        Route::post('/create', [CategoryController::class, 'create_category']);
+        Route::put('/update', [CategoryController::class, 'update_category']);
+        Route::delete('/delete', [CategoryController::class, 'delete_category']);
+    });
 });
 
 //Address Routes
@@ -97,6 +105,12 @@ Route::prefix('shop')->group(function () {
 Route::prefix('seller/wallet')->group(function () {
     Route::get('/balance', [SellerWalletController::class, 'balance']);
     Route::post('/withdraw', [SellerWalletController::class, 'withdraw']);
+});
+
+//Categories Routes
+Route::prefix('category')->group(function () {
+    Route::get('/list', [CategoryController::class, 'get_categories']);
+    Route::get('/list/{slug}', [CategoryController::class, 'get_category']);
 });
 });
 Route::get('/shop/{slug}', [ShopController::class, 'shopdetail']);

@@ -214,7 +214,7 @@ class ShopController extends BaseController
                 $shop->banner = $this->upload($file, 'shops/banners');
             }
             if($request->shop_name){
-                $check_slug = Shop::where('slug', Str::slug($request->shop_name))->count();
+                $check_slug = Shop::where('slug', Str::slug($request->shop_name))->where('id', '!=', $request->shop_id)->count();
                 if($check_slug > 0){
                     $slug = Str::slug($request->shop_name) . '-' . $check_slug;
                 }else{
