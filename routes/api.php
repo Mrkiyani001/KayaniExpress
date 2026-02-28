@@ -3,6 +3,7 @@
 use App\Http\Controllers\AddressController;
 use App\Http\Controllers\AreaController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\BrandController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CityController;
 use App\Http\Controllers\RolesController;
@@ -83,6 +84,13 @@ Route::group(['middleware' => 'auth:api'], function () {
         Route::put('/update', [CategoryController::class, 'update_category']);
         Route::delete('/delete', [CategoryController::class, 'delete_category']);
     });
+
+    //Brands
+    Route::prefix('brand')->group(function () {
+        Route::post('/create', [BrandController::class, 'create_brand']);
+        Route::put('/update', [BrandController::class, 'update_brand']);
+        Route::delete('/delete', [BrandController::class, 'delete_brand']);
+    });
 });
 
 //Address Routes
@@ -111,6 +119,12 @@ Route::prefix('seller/wallet')->group(function () {
 Route::prefix('category')->group(function () {
     Route::get('/list', [CategoryController::class, 'get_categories']);
     Route::get('/list/{slug}', [CategoryController::class, 'get_category']);
+});
+
+//Brands Routes
+Route::prefix('brand')->group(function () {
+    Route::get('/list', [BrandController::class, 'get_all_brands']);
+    Route::get('/list/{slug}', [BrandController::class, 'get_brand']);
 });
 });
 Route::get('/shop/{slug}', [ShopController::class, 'shopdetail']);

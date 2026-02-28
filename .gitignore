@@ -24,4 +24,4 @@ Homestead.yaml
 Thumbs.db
 DEVELOPMENT_PLAN.md
 storage/app/public
-storage
+public/uploads
