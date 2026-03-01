@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AddressController;
 use App\Http\Controllers\AreaController;
+use App\Http\Controllers\AttributesController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BrandController;
 use App\Http\Controllers\CategoryController;
@@ -91,6 +92,21 @@ Route::group(['middleware' => 'auth:api'], function () {
         Route::put('/update', [BrandController::class, 'update_brand']);
         Route::delete('/delete', [BrandController::class, 'delete_brand']);
     });
+
+    //Attributes
+    Route::prefix('attribute')->group(function () {
+        Route::post('/create', [AttributesController::class, 'create_attribute']);
+        Route::put('/update', [AttributesController::class, 'update_attribute']);
+        Route::delete('/delete', [AttributesController::class, 'delete_attribute']);
+    });
+
+    //Attribute Values
+    Route::prefix('attribute-value')->group(function () {
+        Route::post('/create', [AttributesController::class, 'create_attribute_value']);
+        Route::put('/update', [AttributesController::class, 'update_attribute_value']);
+        Route::delete('/delete', [AttributesController::class, 'delete_attribute_value']);
+        Route::get('/list', [AttributesController::class, 'get_attribute_values']);
+    });
 });
 
 //Address Routes
@@ -125,6 +141,16 @@ Route::prefix('category')->group(function () {
 Route::prefix('brand')->group(function () {
     Route::get('/list', [BrandController::class, 'get_all_brands']);
     Route::get('/list/{slug}', [BrandController::class, 'get_brand']);
+});
+
+//Attributes Routes
+Route::prefix('attribute')->group(function () {
+    Route::get('/list', [AttributesController::class, 'get_attributes']);
+});
+
+//Attribute Values Routes
+Route::prefix('attribute-value')->group(function () {
+    Route::get('/list', [AttributesController::class, 'get_attribute_values']);
 });
 });
 Route::get('/shop/{slug}', [ShopController::class, 'shopdetail']);
