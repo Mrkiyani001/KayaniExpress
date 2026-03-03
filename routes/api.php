@@ -105,7 +105,6 @@ Route::group(['middleware' => 'auth:api'], function () {
         Route::post('/create', [AttributesController::class, 'create_attribute_value']);
         Route::put('/update', [AttributesController::class, 'update_attribute_value']);
         Route::delete('/delete', [AttributesController::class, 'delete_attribute_value']);
-        Route::get('/list', [AttributesController::class, 'get_attribute_values']);
     });
 });
 

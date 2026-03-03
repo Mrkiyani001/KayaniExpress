@@ -43,8 +43,16 @@ class AttributesController extends BaseController
             if(!$user){
                 return $this->unauthorized();
             }
-            $attributes = ProductAttribute::with('values')->get();
-            return $this->Response(true, 'Attributes fetched successfully', $attributes, 200);
+            if($request->id){
+                $attributes = ProductAttribute::where('id', $request->id)->with('values')->first();
+            }else{
+                $attributes = ProductAttribute::with('values')->get();
+            }
+            if($attributes){
+                return $this->Response(true, 'Attributes fetched successfully', $attributes, 200);
+            }else{
+                return $this->Response(false, 'Attributes fetched failed', 'Attribute not found', 404);
+            }
         }catch(Exception $e){
             return $this->Response(false, 'Attributes fetched failed', $e->getMessage(), 500);
         }
@@ -180,7 +188,11 @@ class AttributesController extends BaseController
             if(!$user){
                 return $this->unauthorized();
             }
-            $attributeValues = AttributeValue::with('attribute')->get();
+            if($request->id){
+                $attributeValues = AttributeValue::where('id', $request->id)->with('attribute')->first();
+            }else{
+                $attributeValues = AttributeValue::with('attribute')->get();
+            }
             return $this->Response(true, 'Attribute values fetched successfully', $attributeValues, 200);
         }catch(Exception $e){
             return $this->Response(false, 'Attribute values fetched failed', $e->getMessage(), 500);
