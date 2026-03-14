@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\DynamicFilter;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
@@ -131,17 +132,21 @@ public function update(Request $request){
         if(!$shop){
             return $this->Response(false, 'User has no shop. Please create a shop first.',[], 404);
         }
+        if($request->category_id){
         $category = Category::where('id', $request->category_id)->first();
         if(!$category){
             return $this->Response(false, 'Category not found',[], 404);
         }
+        }
+        if($request->brand_id){
         $brand = Brand::where('id', $request->brand_id)->first();
         if(!$brand){
             return $this->Response(false, 'Brand not found',[], 404);
         }
-        $product = Product::where('id', $request->id)->first();
-        if(!$product){
-            return $this->Response(false, 'Product not found',[], 404);
+        }
+        $product = Product::where('id', $request->id)->firstOrFail();
+        if($product->shop_id != $shop->id){
+            return $this->Response(false, 'You are not authorized to update this product',[], 403);
         }
         if($request->name){
             $check_slug = Product::where('slug', Str::slug($request->name))->count();
@@ -152,7 +157,7 @@ public function update(Request $request){
             }
         }
         $product->update([
-            'shop_id' => $request->shop_id ?? $product->shop_id,
+            'shop_id' => $product->shop_id,
             'category_id' => $request->category_id ?? $product->category_id,
             'brand_id' => $request->brand_id ?? $product->brand_id,
             'name' => $request->name ?? $product->name,
@@ -203,14 +208,8 @@ public function delete_product(Request $request){
         if($user->hasRole(['Customer'])){
             return $this->NotAllowed();
         }
-        $shop = Shop::where('user_id', $user->id)->first();
-        if(!$shop){
-            return $this->Response(false, 'User has no shop. Please create a shop first.',[], 404);
-        }
-        $product = Product::where('id', $request->id)->first();
-        if(!$product){
-            return $this->Response(false, 'Product not found',[], 404);
-        }
+        $shop = Shop::where('user_id', $user->id)->firstOrFail();
+        $product = Product::where('id', $request->id)->firstOrFail();
         if($product->shop_id != $shop->id){
             return $this->Response(false, 'Product does not belong to your shop.',[], 403);
         }
@@ -234,10 +233,7 @@ public function my_products(Request $request){
         if($user->hasRole(['Customer'])){
             return $this->NotAllowed();
         }
-        $shop = Shop::where('user_id', $user->id)->first();
-        if(!$shop){
-            return $this->Response(false, 'User has no shop. Please create a shop first.',[], 404);
-        }
+        $shop = Shop::where('user_id', $user->id)->firstOrFail();
         $product = Product::where('shop_id', $shop->id)->with('attachment', 'skus', 'category', 'brand')->paginate($limit);
         $Data = $this->PaginateData($product, $product->items());
         return $this->Response(true, 'Product fetched successfully', $Data, 200);
@@ -248,43 +244,62 @@ public function my_products(Request $request){
 public function products(Request $request){
     try{
         $limit =(int) $request->input('limit', 10) ;
-        $product = Product::with('attachment', 'skus', 'category', 'brand');
-        if($request->search){
-            $product->where('name', 'like', '%'.$request->search.'%');
+        $query = Product::with('attachment', 'skus', 'category', 'brand');
+        if($request->has('filters')){
+            DynamicFilter::applyNestedWhereHas($request, $query);
         }
-        if($request->category_id){
-            $product->where('category_id', $request->category_id);
-        }
-        if($request->brand_id){
-            $product->where('brand_id', $request->brand_id);
-        }
-        if($request->is_featured){
-            $product->where('is_featured', $request->is_featured);
-        }
-        //Filter by price range
-        if($request->min_price || $request->max_price){
-            $product->whereHas('skus', function($q) use ($request) {
-                if($request->min_price){
-                    $q->where('price', '>=', $request->min_price);
-                }
-                if($request->max_price){
-                    $q->where('price', '<=', $request->max_price);
-                }
-            });
-        }
-
-        //Sorting
-        if($request->sort == 'latest'){
-            $product->latest();
-        }
-        if($request->sort == 'oldest'){
-            $product->oldest();
-        }
-        $P = $product->paginate($limit);
-        $Data = $this->PaginateData($P, $P->items());
+        $product = $query->paginate($limit);
+        $Data = $this->PaginateData($product, $product->items());
         return $this->Response(true, 'Product fetched successfully', $Data, 200);
     }catch(Exception $e){
         return $this->Response(false, 'Something went wrong'.$e->getMessage(),[], 500);
     }
 } 
+public function product_detail($slug){
+    try{
+        $product = Product::where('slug', $slug)->with('attachment', 'skus', 'category', 'brand','shop')->firstOrFail();
+        return $this->Response(true, 'Product fetched successfully', $product, 200);
+    }catch(Exception $e){
+        return $this->Response(false, 'Something went wrong'.$e->getMessage(),[], 500);
+    }
+}
+public function category_wise(Request $request){
+    try{
+        $this->ValidateRequest($request,[
+            'category_id' => 'required|exists:categories,id',
+        ]);
+        $limit =(int) $request->input('limit', 10) ;
+        $product = Product::where('category_id', $request->category_id)->with('attachment', 'skus', 'category', 'brand')->paginate($limit);
+        $Data = $this->PaginateData($product, $product->items());
+        return $this->Response(true, 'Product fetched successfully', $Data, 200);
+    }catch(Exception $e){
+        return $this->Response(false, 'Something went wrong'.$e->getMessage(),[], 500);
+    }
+}
+public function shop_wise(Request $request){
+    try{
+        $this->ValidateRequest($request,[
+            'shop_id' => 'required|exists:shops,id',
+        ]);
+        $limit =(int) $request->input('limit', 10) ;
+        $product = Product::where('shop_id', $request->shop_id)->with('attachment', 'skus', 'category', 'brand')->paginate($limit);
+        $Data = $this->PaginateData($product, $product->items());
+        return $this->Response(true, 'Product fetched successfully', $Data, 200);
+    }catch(Exception $e){
+        return $this->Response(false, 'Something went wrong'.$e->getMessage(),[], 500);
+    }
+}
+public function brand_wise(Request $request){
+    try{
+        $this->ValidateRequest($request,[
+            'brand_id' => 'required|exists:brands,id',
+        ]);
+        $limit =(int) $request->input('limit', 10) ;
+        $product = Product::where('brand_id', $request->brand_id)->with('attachment', 'skus', 'category', 'shop', 'brand')->paginate($limit);
+        $Data = $this->PaginateData($product, $product->items());
+        return $this->Response(true, 'Product fetched successfully', $Data, 200);
+    }catch(Exception $e){
+        return $this->Response(false, 'Something went wrong'.$e->getMessage(),[], 500);
+    }
+}
 }

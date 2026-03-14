@@ -5,11 +5,14 @@ use App\Http\Controllers\AreaController;
 use App\Http\Controllers\AttributesController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BrandController;
+use App\Http\Controllers\CartController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CityController;
+use App\Http\Controllers\ProductController;
 use App\Http\Controllers\RolesController;
 use App\Http\Controllers\SellerWalletController;
 use App\Http\Controllers\ShopController;
+use App\Http\Controllers\WishListController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('signup', [AuthController::class, 'signup']);
@@ -151,5 +154,35 @@ Route::prefix('attribute')->group(function () {
 Route::prefix('attribute-value')->group(function () {
     Route::get('/list', [AttributesController::class, 'get_attribute_values']);
 });
+
+Route::prefix('product')->group(function () {
+    Route::post('/create', [ProductController::class, 'create_product']);
+    Route::put('/update', [ProductController::class, 'update']);
+    Route::delete('/delete', [ProductController::class, 'delete_product']);
+    Route::get('/my-products', [ProductController::class, 'my_products']);
 });
+
+Route::prefix('customer/cart')->group(function () {
+    Route::post('/create', [CartController::class, 'add_to_cart']);
+    Route::put('/update', [CartController::class, 'update_cart']);
+    Route::delete('/delete', [CartController::class, 'delete_cart']);
+    Route::get('/list', [CartController::class, 'get_cart']);
+});
+
+Route::prefix('customer/wishlist')->group(function () {
+    Route::post('/create', [WishListController::class, 'add_to_wishlist']);
+    Route::delete('/delete', [WishListController::class, 'delete_wishlist']);
+    Route::get('/list', [WishListController::class, 'get_wishlist']);
+});
+
+
+});
+
+// Public Routes
 Route::get('/shop/{slug}', [ShopController::class, 'shopdetail']);
+Route::get('/product/{slug}', [ProductController::class, 'product_detail']);
+Route::post('/category/products', [ProductController::class, 'category_wise']);
+Route::post('/shop/products', [ProductController::class, 'shop_wise']);
+Route::post('/brand/products', [ProductController::class, 'brand_wise']);
+Route::get('/products', [ProductController::class, 'products']);
+
