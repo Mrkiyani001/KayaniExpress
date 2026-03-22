@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Brand\CreateRequest;
+use App\Http\Requests\Brand\UpdateRequest;
+use App\Http\Requests\Brand\DeleteRequest;
 use App\Models\Brand;
 use Exception;
 use Illuminate\Http\Request;
@@ -10,12 +13,8 @@ use Illuminate\Support\Str;
 
 class BrandController extends BaseController
 {
-    public function create_brand(Request $request){
-        $this->ValidateRequest($request,[
-            'name'=>'required|string|max:255',
-            'logo'=>'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'status'=>'required|in:active,inactive',
-        ]);
+    public function create_brand(CreateRequest $request){
+        $data = $request->validated();
         try{
             DB::beginTransaction();
         $user = auth('api')->user();
@@ -27,19 +26,19 @@ class BrandController extends BaseController
         }
         if($request->hasFile('logo')){
             $logo = $request->file('logo');
-            $logoname = $this->upload($logo , 'Brands/Logos');
+            $logo_path = $this->upload($logo , 'Brands/Logos');
         }
-        $check_slug = Brand::where('slug', Str::slug($request->name))->count();
+        $check_slug = Brand::where('slug', Str::slug($data['name']))->count();
         if($check_slug > 0){
-            $slug = Str::slug($request->name) . '-' . ($check_slug + 1);
+            $slug = Str::slug($data['name']) . '-' . ($check_slug + 1);
         }else{
-            $slug = Str::slug($request->name);
+            $slug = Str::slug($data['name']);
         }
         $brand = Brand::create([
-            'name' => $request->name,
+            'name' => $data['name'],
             'slug' => $slug,
-            'logo' => $logoname ?? null,
-            'status' => $request->status,
+            'logo' => $logo_path ?? null,
+            'status' => $data['status'],
         ]);
         DB::commit();
         return $this->Response(true, 'Brand created successfully', $brand, 200);
@@ -48,13 +47,8 @@ class BrandController extends BaseController
         return $this->Response(false, 'Brand created failed', $e->getMessage(), 500);
     }
     }
-    public function update_brand(Request $request){
-        $this->ValidateRequest($request,[
-            'brand_id'=>'required|exists:brands,id',
-            'name'=>'nullable|string|max:255',
-            'logo'=>'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'status'=>'nullable|in:active,inactive',
-        ]);
+    public function update_brand(UpdateRequest $request){
+        $data = $request->validated();
         try{
             DB::beginTransaction();
         $user = auth('api')->user();
@@ -64,24 +58,24 @@ class BrandController extends BaseController
         if(!$user->hasRole(['Super Admin', 'Admin'])){
             return $this->NotAllowed();
         }
-        $brand = Brand::findOrFail($request->brand_id);
+        $brand = Brand::findOrFail($data['brand_id']);
         if($request->hasFile('logo')){
             $logo = $request->file('logo');
-            $logoname = $this->upload($logo , 'Brands/Logos');
+            $logo_path = $this->upload($logo , 'Brands/Logos');
         }
-        if($request->name){
-            $check_slug = Brand::where('slug', Str::slug($request->name))->where('id', '!=', $brand->id)->count();
+        if(!empty($data['name'])){
+            $check_slug = Brand::where('slug', Str::slug($data['name']))->where('id', '!=', $brand->id)->count();
             if($check_slug > 0){
-                $slug = Str::slug($request->name) . '-' . ($check_slug + 1);
+                $slug = Str::slug($data['name']) . '-' . ($check_slug + 1);
             }else{
-                $slug = Str::slug($request->name);
+                $slug = Str::slug($data['name']);
             }
         }
         $brand->update([
-            'name' => $request->name ?? $brand->name,
+            'name' => $data['name'] ?? $brand->name,
             'slug' => $slug ?? $brand->slug,
-            'logo' => $logoname ?? $brand->logo,
-            'status' => $request->status ?? $brand->status,
+            'logo' => $logo_path ?? $brand->logo,
+            'status' => $data['status'] ?? $brand->status,
         ]);
         DB::commit();
         return $this->Response(true, 'Brand updated successfully', $brand, 200);
@@ -90,10 +84,8 @@ class BrandController extends BaseController
         return $this->Response(false, 'Brand updated failed', $e->getMessage(), 500);
     }
     }
-    public function delete_brand(Request $request){
-        $this->ValidateRequest($request,[
-            'brand_id'=>'required|exists:brands,id',
-        ]);
+    public function delete_brand(DeleteRequest $request){
+        $data = $request->validated();
         try{
         $user = auth('api')->user();
         if(!$user){
@@ -102,7 +94,7 @@ class BrandController extends BaseController
         if(!$user->hasRole(['Super Admin', 'Admin'])){
             return $this->NotAllowed();
         }
-        $brand = Brand::findOrFail($request->brand_id);
+        $brand = Brand::findOrFail($data['brand_id']);
         $brand->delete();
         return $this->Response(true, 'Brand deleted successfully', [], 200);
     }catch(Exception $e){

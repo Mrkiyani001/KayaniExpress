@@ -3,6 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\DynamicFilter;
+use App\Http\Requests\Product\Brand_wiseRequest;
+use App\Http\Requests\Product\Cat_wiseRequest;
+use App\Http\Requests\Product\CreateRequest;
+use App\Http\Requests\Product\DeleteRequest;
+use App\Http\Requests\Product\FilterRequest;
+use App\Http\Requests\Product\Shop_wiseRequest;
+use App\Http\Requests\Product\UpdateRequest;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
@@ -15,22 +22,8 @@ use Illuminate\Support\Str;
 
 class ProductController extends BaseController
 {
-    public function create_product(Request $request){
-        $this->ValidateRequest($request,[
-            'category_id' => 'required|exists:categories,id',
-            'brand_id' => 'required|exists:brands,id',
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string|max:1000',
-            'file'=>'nullable|array',
-            'file.*' => 'file|mimes:mp4,mov,avi,wmv,flv,mkv,webm,3gp,jpeg,png,gif,webp,bmp,svg,heic,heif|max:102400',
-            'is_featured' => 'nullable|boolean',
-            // SKUs validation
-            'skus' => 'required|array|min:1',
-            'skus.*.price' => 'required|numeric|min:0',
-            'skus.*.discounted_price' => 'nullable|numeric|min:0',
-            'skus.*.stock_qty' => 'required|integer|min:0',
-            'skus.*.attribute_values' => 'required|array', // e.g. {"Color": "Red", "Size": "XL"}
-        ]);
+    public function create_product(CreateRequest $request){
+        $data = $request->validated();
         try{
         DB::beginTransaction();
         $user =auth('api')->user();
@@ -44,28 +37,28 @@ class ProductController extends BaseController
         if(!$shop){
             return $this->Response(false, 'User has no shop. Please create a shop first.',[], 404);
         }
-        $category = Category::where('id', $request->category_id)->first();
+        $category = Category::where('id', $data['category_id'])->first();
         if(!$category){
             return $this->Response(false, 'Category not found',[], 404);
         }
-        $brand = Brand::where('id', $request->brand_id)->first();
+        $brand = Brand::where('id', $data['brand_id'])->first();
         if(!$brand){
             return $this->Response(false, 'Brand not found',[], 404);
         }
-        $check_slug = Product::where('slug', Str::slug($request->name))->count();
+        $check_slug = Product::where('slug', Str::slug($data['name']))->count();
         if($check_slug > 0){
-            $slug = Str::slug($request->name).'-'.($check_slug + 1);
+            $slug = Str::slug($data['name']).'-'.($check_slug + 1);
         }else{
-            $slug = Str::slug($request->name);
+            $slug = Str::slug($data['name']);
         }
         $product = Product::create([
             'shop_id' => $shop->id,
-            'category_id' => $request->category_id,
-            'brand_id' => $request->brand_id,
-            'name' => $request->name,
+            'category_id' => $data['category_id'],
+            'brand_id' => $data['brand_id'],
+            'name' => $data['name'],
             'slug' => $slug,
-            'description' => $request->description ?? null,
-            'is_featured' => $request->is_featured ?? false,
+            'description' => $data['description'] ?? null,
+            'is_featured' => $data['is_featured'] ?? false,
         ]);
 
         // Files upload
@@ -78,7 +71,7 @@ class ProductController extends BaseController
             $product->attachment()->oldest()->update(['is_main' => true]);
         }
         // Skus Start Here
-        foreach($request->skus as $sku){
+        foreach($data['skus'] as $sku){
             $sku_code = Str::slug($product->name).'-'.Str::slug(implode('-', $sku['attribute_values']));
             $check_sku = ProductSku::where('sku_code', $sku_code)->count();
             if($check_sku > 0){
@@ -101,24 +94,8 @@ class ProductController extends BaseController
         return $this->Response(false, 'Something went wrong'.$e->getMessage(),[], 500);
     }
 }
-public function update(Request $request){
-    $this->ValidateRequest($request,[
-        'id' => 'required|exists:products,id',
-        'category_id' => 'nullable|exists:categories,id',
-        'brand_id' => 'nullable|exists:brands,id',
-        'name' => 'nullable|string|max:255',
-        'description' => 'nullable|string|max:1000',
-        'file'=>'nullable|array',
-        'file.*' => 'file|mimes:mp4,mov,avi,wmv,flv,mkv,webm,3gp,jpeg,png,gif,webp,bmp,svg,heic,heif|max:102400',
-        'is_featured' => 'nullable|boolean',
-        // SKUs validation
-        'skus.*.id' => 'nullable|exists:product_skus,id',
-        'skus' => 'nullable|array|min:1',
-        'skus.*.price' => 'nullable|numeric|min:0',
-        'skus.*.discounted_price' => 'nullable|numeric|min:0',
-        'skus.*.stock_qty' => 'nullable|integer|min:0',
-        'skus.*.attribute_values' => 'nullable|array', // e.g. {"Color": "Red", "Size": "XL"}
-    ]);
+public function update(UpdateRequest $request){
+    $data = $request->validated();
     try{
         DB::beginTransaction();
         $user =auth('api')->user();
@@ -132,38 +109,38 @@ public function update(Request $request){
         if(!$shop){
             return $this->Response(false, 'User has no shop. Please create a shop first.',[], 404);
         }
-        if($request->category_id){
-        $category = Category::where('id', $request->category_id)->first();
+        if(isset($data['category_id'])){
+        $category = Category::where('id', $data['category_id'])->first();
         if(!$category){
             return $this->Response(false, 'Category not found',[], 404);
         }
         }
-        if($request->brand_id){
-        $brand = Brand::where('id', $request->brand_id)->first();
+        if(isset($data['brand_id'])){
+        $brand = Brand::where('id', $data['brand_id'])->first();
         if(!$brand){
             return $this->Response(false, 'Brand not found',[], 404);
         }
         }
-        $product = Product::where('id', $request->id)->firstOrFail();
+        $product = Product::where('id', $data['id'])->firstOrFail();
         if($product->shop_id != $shop->id){
             return $this->Response(false, 'You are not authorized to update this product',[], 403);
         }
-        if($request->name){
-            $check_slug = Product::where('slug', Str::slug($request->name))->count();
+        if(isset($data['name'])){
+            $check_slug = Product::where('slug', Str::slug($data['name']))->count();
             if($check_slug > 0){
-                $slug = Str::slug($request->name).'-'.($check_slug + 1);
+                $slug = Str::slug($data['name']).'-'.($check_slug + 1);
             }else{
-                $slug = Str::slug($request->name);
+                $slug = Str::slug($data['name']);
             }
         }
         $product->update([
             'shop_id' => $product->shop_id,
-            'category_id' => $request->category_id ?? $product->category_id,
-            'brand_id' => $request->brand_id ?? $product->brand_id,
-            'name' => $request->name ?? $product->name,
+            'category_id' => $data['category_id'] ?? $product->category_id,
+            'brand_id' => $data['brand_id'] ?? $product->brand_id,
+            'name' => $data['name'] ?? $product->name,
             'slug' => $slug ?? $product->slug,
-            'description' => $request->description ?? $product->description,
-            'is_featured' => $request->is_featured ?? $product->is_featured,
+            'description' => $data['description'] ?? $product->description,
+            'is_featured' => $data['is_featured'] ?? $product->is_featured,
         ]);
         // Files upload
         if($request->hasFile('file')){
@@ -174,15 +151,15 @@ public function update(Request $request){
             // Pehli image ko main mark karo (loop ke bahar)
             $product->attachment()->oldest()->update(['is_main' => true]);
         }
-        if($request->skus){
-            foreach($request->skus as $sku){
+        if(isset($data['skus'])){
+            foreach($data['skus'] as $sku){
             if(isset($sku['id'])){
-            $Exist_sku = ProductSku::where('id', $sku['id'])->first();
+            $Exist_sku = ProductSku::where('id', $sku['id'])->firstOrFail();
             $Exist_sku->update([
                 'price' => $sku['price'] ?? $Exist_sku->price,
                 'discounted_price' => $sku['discounted_price'] ?? $Exist_sku->discounted_price,
                 'stock_qty' => $sku['stock_qty'] ?? $Exist_sku->stock_qty,
-                'attribute_values' => json_encode($sku['attribute_values'] ?? $Exist_sku->attribute_values),
+                'attribute_values' => isset($sku['attribute_values']) ? json_encode($sku['attribute_values']) : $Exist_sku->attribute_values,
             ]);           
         }
         }
@@ -195,10 +172,8 @@ public function update(Request $request){
         return $this->Response(false, 'Something went wrong'.$e->getMessage(),[], 500);
     }
 }
-public function delete_product(Request $request){
-    $this->ValidateRequest($request,[
-        'id' => 'required|exists:products,id',
-    ]);
+public function delete_product(DeleteRequest $request){
+    $data = $request->validated();
     try{
         DB::beginTransaction();
         $user =auth('api')->user();
@@ -209,7 +184,7 @@ public function delete_product(Request $request){
             return $this->NotAllowed();
         }
         $shop = Shop::where('user_id', $user->id)->firstOrFail();
-        $product = Product::where('id', $request->id)->firstOrFail();
+        $product = Product::where('id', $data['id'])->firstOrFail();
         if($product->shop_id != $shop->id){
             return $this->Response(false, 'Product does not belong to your shop.',[], 403);
         }
@@ -241,7 +216,7 @@ public function my_products(Request $request){
         return $this->Response(false, 'Something went wrong'.$e->getMessage(),[], 500);
     }
 }
-public function products(Request $request){
+public function products(FilterRequest $request){
     try{
         $limit =(int) $request->input('limit', 10) ;
         $query = Product::with('attachment', 'skus', 'category', 'brand');
@@ -263,39 +238,33 @@ public function product_detail($slug){
         return $this->Response(false, 'Something went wrong'.$e->getMessage(),[], 500);
     }
 }
-public function category_wise(Request $request){
+public function category_wise(Cat_wiseRequest $request){
     try{
-        $this->ValidateRequest($request,[
-            'category_id' => 'required|exists:categories,id',
-        ]);
+        $data = $request->validated();
         $limit =(int) $request->input('limit', 10) ;
-        $product = Product::where('category_id', $request->category_id)->with('attachment', 'skus', 'category', 'brand')->paginate($limit);
+        $product = Product::where('category_id', $data['category_id'])->with('attachment', 'skus', 'category', 'brand')->paginate($limit);
         $Data = $this->PaginateData($product, $product->items());
         return $this->Response(true, 'Product fetched successfully', $Data, 200);
     }catch(Exception $e){
         return $this->Response(false, 'Something went wrong'.$e->getMessage(),[], 500);
     }
 }
-public function shop_wise(Request $request){
+public function shop_wise(Shop_wiseRequest $request){
     try{
-        $this->ValidateRequest($request,[
-            'shop_id' => 'required|exists:shops,id',
-        ]);
+        $data = $request->validated();
         $limit =(int) $request->input('limit', 10) ;
-        $product = Product::where('shop_id', $request->shop_id)->with('attachment', 'skus', 'category', 'brand')->paginate($limit);
+        $product = Product::where('shop_id', $data['shop_id'])->with('attachment', 'skus', 'category', 'brand')->paginate($limit);
         $Data = $this->PaginateData($product, $product->items());
         return $this->Response(true, 'Product fetched successfully', $Data, 200);
     }catch(Exception $e){
         return $this->Response(false, 'Something went wrong'.$e->getMessage(),[], 500);
     }
 }
-public function brand_wise(Request $request){
+public function brand_wise(Brand_wiseRequest $request){
     try{
-        $this->ValidateRequest($request,[
-            'brand_id' => 'required|exists:brands,id',
-        ]);
+        $data = $request->validated();
         $limit =(int) $request->input('limit', 10) ;
-        $product = Product::where('brand_id', $request->brand_id)->with('attachment', 'skus', 'category', 'shop', 'brand')->paginate($limit);
+        $product = Product::where('brand_id', $data['brand_id'])->with('attachment', 'skus', 'category', 'shop', 'brand')->paginate($limit);
         $Data = $this->PaginateData($product, $product->items());
         return $this->Response(true, 'Product fetched successfully', $Data, 200);
     }catch(Exception $e){

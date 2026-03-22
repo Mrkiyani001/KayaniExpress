@@ -22,7 +22,7 @@ return new class extends Migration
             $table->decimal('total_price', 10, 2);
             $table->decimal('admin_commission', 10, 2);
             $table->decimal('seller_payout', 10, 2);
-            $table->enum('delivery_status',['pending','confirmed','shipped','delivered','cancelled'])->default('pending');
+            $table->enum('delivery_status',['pending','processing','confirmed','shipped','delivered','cancelled'])->default('pending');
             $table->timestamps();
         });
     }

@@ -2,17 +2,18 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\City\CreateRequest;
+use App\Http\Requests\City\DeleteRequest;
+use App\Http\Requests\City\FilterRequest;
+use App\Http\Requests\City\UpdateRequest;
 use App\Models\City;
 use Exception;
 use Illuminate\Http\Request;
 
 class CityController extends BaseController
 {
-    public function create(Request $request){
-        $this->ValidateRequest($request, [
-            'name' => 'required|string|max:255',
-            'status' => 'required|boolean',
-        ]);
+    public function create(CreateRequest $request){
+        $data = $request->validated();
         try{
             $user = auth('api')->user();
             if(!$user){
@@ -21,13 +22,13 @@ class CityController extends BaseController
             if(!$user->hasRole('Super Admin')){
                 return $this->NotAllowed();
             }
-            $city = City::where('name', $request->name)->first();
+            $city = City::where('name', $data['name'])->first();
             if($city){
                 return $this->Response(false, 'City already exists', null, 400);
             }
             $city = City::create([
-                'name' => $request->name,
-                'status' => $request->status,
+                'name' => $data['name'],
+                'status' => $data['status'],
             ]);
             return $this->Response(true, 'City created successfully', $city, 201);
     }catch(Exception $e){
@@ -35,12 +36,8 @@ class CityController extends BaseController
     }
     }
 
-    public function update(Request $request){
-        $this->ValidateRequest($request, [
-            'id' => 'required|exists:cities,id',
-            'name' => 'string|max:255',
-            'status' => 'boolean',
-        ]);
+    public function update(UpdateRequest $request){
+        $data = $request->validated();
         try{
             $user = auth('api')->user();
             if(!$user){
@@ -49,7 +46,7 @@ class CityController extends BaseController
             if(!$user->hasRole('Super Admin')){
                 return $this->NotAllowed();
             }
-            $city = City::findOrFail($request->id);
+            $city = City::findOrFail($data['id']);
             $city->update($request->only(['name', 'status']));
             return $this->Response(true, 'City updated successfully', $city, 200);
     }catch(Exception $e){
@@ -57,10 +54,8 @@ class CityController extends BaseController
 }
 }
 
-public function delete(Request $request){
-    $this->ValidateRequest($request, [
-        'id' => 'required|exists:cities,id',
-    ]);
+public function delete(DeleteRequest $request){
+    $data = $request->validated();
     try{
         $user = auth('api')->user();
         if(!$user){
@@ -69,7 +64,7 @@ public function delete(Request $request){
         if(!$user->hasRole('Super Admin')){
             return $this->NotAllowed();
         }
-        $city = City::findOrFail($request->id);
+        $city = City::findOrFail($data['id']);
         $city->delete();
         return $this->Response(true, 'City deleted successfully', null, 200);
     }catch(Exception $e){
@@ -91,10 +86,8 @@ public function list(Request $request){
         return $this->Response(false, 'Cities not found', $e->getMessage(), 500);
     }
 }
-public function city_filter(Request $request){
-    $this->ValidateRequest($request, [
-        'status' => 'required|boolean',
-    ]);
+public function city_filter(FilterRequest $request){
+    $data = $request->validated();
     try{
         $user = auth('api')->user();
         if(!$user){
@@ -104,7 +97,7 @@ public function city_filter(Request $request){
         if(!$user->hasRole(['Super Admin' , 'Admin'])){
             return $this->NotAllowed();
         }
-        $cities = City::where('status', $request->status)->paginate($limit);
+        $cities = City::where('status', $data['status'])->paginate($limit);
         $data = $this->paginateData($cities, $cities->items());
         return $this->Response(true, 'Cities list', $data, 200);
     }catch(Exception $e){

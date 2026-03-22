@@ -2,6 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Roles_Permission\AssignPerToRoleRequest;
+use App\Http\Requests\Roles_Permission\AssignRoleRequest;
+use App\Http\Requests\Roles_Permission\CreatePerRequest;
+use App\Http\Requests\Roles_Permission\CreateRoleRequest;
+use App\Http\Requests\Roles_Permission\DeletePerRequest;
+use App\Http\Requests\Roles_Permission\DeleteRoleRequest;
+use App\Http\Requests\Roles_Permission\UnAssignPerFromRoleRequest;
+use App\Http\Requests\Roles_Permission\UnAssignRoleRequest;
+use App\Http\Requests\Roles_Permission\UserRolePerRequest;
 use App\Models\User;
 use Exception;
 use Illuminate\Http\Request;
@@ -10,13 +19,9 @@ use Spatie\Permission\Models\Role;
 
 class RolesController extends BaseController
 {
-    public function createRole(Request $request)
+    public function createRole(CreateRoleRequest $request)
     {
-        $this->ValidateRequest($request, [
-            'name' => 'required|string|max:255',
-            'permissions' => 'sometimes|array',
-            'permissions.*' => 'sometimes|exists:permissions,name',
-        ]);
+        $data = $request->validated();
         try {
             $user = auth('api')->user();
             if (!$user) {
@@ -27,12 +32,12 @@ class RolesController extends BaseController
             }
 
             $role = Role::create([
-                'name' => $request->name,
+                'name' => $data['name'],
                 'guard_name' => 'api',
             ]);
 
-            if ($request->has('permissions')) {
-                $role->givePermissionTo($request->permissions);
+            if (!empty($data['permissions'])) {
+                $role->givePermissionTo($data['permissions']);
             }
 
             $role->load('permissions');
@@ -42,11 +47,9 @@ class RolesController extends BaseController
         }
     }
 
-    public function deleteRole(Request $request)
+    public function deleteRole(DeleteRoleRequest $request)
     {
-        $this->ValidateRequest($request, [
-            'id' => 'required|exists:roles,id',
-        ]);
+        $data = $request->validated();
         try {
             $user = auth('api')->user();
             if (!$user) {
@@ -56,7 +59,7 @@ class RolesController extends BaseController
                 return $this->NotAllowed();
             }
 
-            $role = Role::find($request->id);
+            $role = Role::find($data['id']);
             if (!$role) {
                 return $this->Response(false, 'Role not found', [], 404);
             }
@@ -72,12 +75,9 @@ class RolesController extends BaseController
         }
     }
 
-    public function assignRole(Request $request)
+    public function assignRole(AssignRoleRequest $request)
     {
-        $this->ValidateRequest($request, [
-            'role' => 'present|string',
-            'user_id' => 'required|exists:users,id',
-        ]);
+        $data = $request->validated();
         try {
             $user = auth('api')->user();
             if (!$user) {
@@ -87,8 +87,8 @@ class RolesController extends BaseController
                 return $this->NotAllowed();
             }
 
-            $targetUser = User::findOrFail($request->user_id);
-            $roles = $request->role;
+            $targetUser = User::findOrFail($data['user_id']);
+            $roles = $data['role'];
             if(str_contains($roles,'Super Admin')){
                 if(!$user->hasRole('Super Admin')){
                     return $this->NotAllowed();
@@ -107,20 +107,17 @@ class RolesController extends BaseController
         }
     }
 
-    public function unassignRole(Request $request)
+    public function unassignRole(UnAssignRoleRequest $request)
     {
-        $this->ValidateRequest($request, [
-            'role' => 'present|string',
-            'user_id' => 'required|exists:users,id',
-        ]);
+        $data = $request->validated();
         try {
             $user = auth('api')->user();
             if (!$user) {
                 return $this->unauthorized();
             }
-              $targetUser = User::findOrFail($request->user_id);
+              $targetUser = User::findOrFail($data['user_id']);
 
-            if(!$targetUser->hasRole($request->role)){
+            if(!$targetUser->hasRole($data['role'])){
                 return $this->Response(false, 'User does not have this role', [], 400);
             }
             if ($targetUser->hasRole('Super Admin')) {
@@ -129,7 +126,7 @@ class RolesController extends BaseController
             if (!$user->hasRole(['Super Admin','Admin'])) {
                 return $this->NotAllowed();
             }
-            $targetUser->removeRole($request->role);
+            $targetUser->removeRole($data['role']);
             if ($targetUser->roles()->count() == 0) {
                 $targetUser->assignRole('Customer');
             }
@@ -159,10 +156,8 @@ class RolesController extends BaseController
             return $this->Response(false, 'Failed to fetch roles'.$e->getMessage(), [], 500);
         }
     }
-    public function createPermission(Request $request){
-        $this->ValidateRequest($request, [
-            'name'=>'required|string|max:255',
-        ]);
+    public function createPermission(CreatePerRequest $request){
+        $data = $request->validated();
         try {
             $user = auth('api')->user();
             if (!$user) {
@@ -171,12 +166,12 @@ class RolesController extends BaseController
             if (!$user->hasRole(['Super Admin','Admin'])) {
                 return $this->NotAllowed();
             }
-            $permission = Permission::where('name', $request->name)->where('guard_name', 'api')->first();
+            $permission = Permission::where('name', $data['name'])->where('guard_name', 'api')->first();
             if ($permission) {
                 return $this->Response(false, 'Permission already exists', [], 400);
             }
             $permission = Permission::create([
-                'name' => $request->name,
+                'name' => $data['name'],
                 'guard_name' => 'api',
             ]);
 
@@ -185,10 +180,8 @@ class RolesController extends BaseController
             return $this->Response(false, 'Failed to create permission' .$e->getMessage(), [], 500);
         }
     }
-    public function deletePermission(Request $request){
-        $this->ValidateRequest($request, [
-            'name'=>'required|string|max:255',
-        ]);
+    public function deletePermission(DeletePerRequest $request){
+        $data = $request->validated();
         try {
             $user = auth('api')->user();
             if (!$user) {
@@ -197,7 +190,7 @@ class RolesController extends BaseController
             if (!$user->hasRole(['Super Admin','Admin'])) {
                 return $this->NotAllowed();
             }
-            $permission = Permission::where('name', $request->name)->where('guard_name', 'api')->first();
+            $permission = Permission::where('name', $data['name'])->where('guard_name', 'api')->first();
             if (!$permission) {
                 return $this->Response(false, 'Permission not found', [], 400);
             }
@@ -222,12 +215,8 @@ class RolesController extends BaseController
             return $this->Response(false, 'Failed to fetch permissions'.$e->getMessage(), [], 500);
         }
     }
-    public function assignPermissionToRole(Request $request){
-        $this->ValidateRequest($request, [
-            'role_id'=>'required|exists:roles,id',
-            'permission'=>'required|array',
-            'permission.*'=>'exists:permissions,name',
-        ]);
+    public function assignPermissionToRole(AssignPerToRoleRequest $request){
+        $data = $request->validated();
         try {
             $user = auth('api')->user();
             if (!$user) {
@@ -236,14 +225,14 @@ class RolesController extends BaseController
             if (!$user->hasRole(['Super Admin','Admin'])) {
                 return $this->NotAllowed();
             }
-            $role = Role::findOrFail($request->role_id);
+            $role = Role::findOrFail($data['role_id']);
 
             // Super Admin role permissions cannot be modified
             if ($role->name === 'Super Admin') {
                 return $this->NotAllowed();
             }
 
-            $role->syncPermissions($request->permission); // sync permissions to role bcz it will remove all previous permissions from role and add new permissions
+            $role->syncPermissions($data['permission']); // sync permissions to role bcz it will remove all previous permissions from role and add new permissions
             $role->refresh();
             $data = [
                 'role' => $role,
@@ -254,12 +243,8 @@ class RolesController extends BaseController
             return $this->Response(false, 'Failed to assign permission'.$e->getMessage(), [], 500);
         }
     }
-    public function removePermissionFromRole(Request $request){
-        $this->ValidateRequest($request, [
-            'role_id'=>'required|exists:roles,id',
-            'permission'=>'required|array',
-            'permission.*'=>'exists:permissions,name',
-        ]);
+    public function removePermissionFromRole(UnAssignPerFromRoleRequest $request){
+        $data = $request->validated();
         try {
             $user = auth('api')->user();
             if (!$user) {
@@ -268,18 +253,18 @@ class RolesController extends BaseController
             if (!$user->hasRole(['Super Admin','Admin'])) {
                 return $this->NotAllowed();
             }
-            $role = Role::findOrFail($request->role_id);
+            $role = Role::findOrFail($data['role_id']);
 
             // Super Admin role permissions cannot be removed
             if ($role->name === 'Super Admin') {
                 return $this->NotAllowed();
             }
             $role_per = $role->permissions->pluck('name')->toArray();  // instead of loop we can use pluck to get all permissions and then diff it with request permission
-            $Not_in_Role = array_diff($request->permission, $role_per); // array_diff is used to get the difference between two arrays
+            $Not_in_Role = array_diff($data['permission'], $role_per); // array_diff is used to get the difference between two arrays
             if (!empty($Not_in_Role)) {             // if not in role is not empty then return error
                 return $this->Response(false, 'Role does not have permissions: ' . implode(', ', $Not_in_Role),[], 400); //implode is used to convert array to string
             }
-            $role->revokePermissionTo($request->permission); // revoke permission from role
+            $role->revokePermissionTo($data['permission']); // revoke permission from role
             $role->refresh();
             $data = [
                 'role' => $role,
@@ -290,10 +275,8 @@ class RolesController extends BaseController
             return $this->Response(false, 'Failed to remove permission'.$e->getMessage(), [], 500);
         }
     }
-    public function getUserRolePermission(Request $request){
-        $this->ValidateRequest($request, [
-            'user_id'=>'nullable|exists:users,id',
-        ]);
+    public function getUserRolePermission(UserRolePerRequest $request){
+        $data = $request->validated();
         try {
             $user = auth('api')->user();
             if (!$user) {
@@ -302,11 +285,11 @@ class RolesController extends BaseController
             if (!$user->hasRole(['Super Admin','Admin'])) {
                 return $this->NotAllowed();
             }
-            $user = User::findOrFail($request->user_id);
+            $targetUser = isset($data['user_id']) ? User::findOrFail($data['user_id']) : $user; // first it check if user_id is set or not if set then find user by user_id else use the authenticated user
             $data = [
-                'user' => $user,
-                'roles' => $user->getRoleNames(),
-                'permissions' => $user->getAllPermissions()->pluck('name')->unique(),
+                'user' => $targetUser,
+                'roles' => $targetUser->getRoleNames(),
+                'permissions' => $targetUser->getAllPermissions()->pluck('name')->unique(),
             ];
             return $this->Response(true, 'User role and permission fetched successfully', $data, 200);
         } catch (Exception $e) {

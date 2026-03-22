@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Cart\add_cart_Request;
+use App\Http\Requests\Cart\delete_cart_Request;
+use App\Http\Requests\Cart\update_cart_Request;
 use App\Models\Carts;
 use Exception;
 use Illuminate\Http\Request;
@@ -9,26 +12,23 @@ use Illuminate\Support\Facades\DB;
 
 class CartController extends BaseController
 {
-    public function add_to_cart(Request $request){
-        $this->ValidateRequest($request,[
-            'product_sku_id' => 'required|exists:product_skus,id',
-            'qty' => 'required|integer|min:1',
-        ]);
+    public function add_to_cart(add_cart_Request $request){
+        $data = $request->validated();
         try{
             DB::beginTransaction();
             $user =auth('api')->user();
             if(!$user){
                 return $this->unauthorized();
             }
-            $cart = Carts::where('user_id', $user->id)->where('product_sku_id', $request->product_sku_id)->first();
+            $cart = Carts::where('user_id', $user->id)->where('product_sku_id', $data['product_sku_id'])->first();
             if($cart){
-                $cart->qty += $request->qty;
+                $cart->qty += $data['qty'];
                 $cart->save();
             }else{
                 $cart = Carts::create([
                     'user_id' => $user->id,
-                    'product_sku_id' => $request->product_sku_id,
-                    'qty' => $request->qty,
+                    'product_sku_id' => $data['product_sku_id'],
+                    'qty' => $data['qty'],
                 ]);
             }
             DB::commit();
@@ -51,20 +51,17 @@ class CartController extends BaseController
             return $this->Response(false, 'Something went wrong'.$e->getMessage(),[], 500);
         }
     }
-    public function update_cart(Request $request){
-        $this->ValidateRequest($request,[
-            'product_sku_id' => 'required|exists:product_skus,id',
-            'qty' => 'required|integer|min:1',
-        ]);
+    public function update_cart(update_cart_Request $request){
+        $data = $request->validated();
         try{
             DB::beginTransaction();
             $user =auth('api')->user();
             if(!$user){
                 return $this->unauthorized();
             }
-            $cart = Carts::where('user_id', $user->id)->where('product_sku_id', $request->product_sku_id)->first();
+            $cart = Carts::where('user_id', $user->id)->where('product_sku_id', $data['product_sku_id'])->first();
             if($cart){
-                $cart->qty = $request->qty;
+                $cart->qty = $data['qty'];
                 $cart->save();
             }else{
                 return $this->Response(false, 'Cart not found',[], 404);
@@ -77,17 +74,15 @@ class CartController extends BaseController
             return $this->Response(false, 'Something went wrong'.$e->getMessage(),[], 500);
         }
     }
-    public function delete_cart(Request $request){
-        $this->ValidateRequest($request,[
-            'product_sku_id' => 'required|exists:product_skus,id',
-        ]);
+    public function delete_cart(delete_cart_Request $request){
+        $data = $request->validated();
         try{
             DB::beginTransaction();
             $user =auth('api')->user();
             if(!$user){
                 return $this->unauthorized();
             }
-            $cart = Carts::where('user_id', $user->id)->where('product_sku_id', $request->product_sku_id)->first();
+            $cart = Carts::where('user_id', $user->id)->where('product_sku_id', $data['product_sku_id'])->first();
             if($cart){
                 $cart->delete();
             }else{

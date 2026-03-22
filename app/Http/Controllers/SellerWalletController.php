@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\SellerWallet\WithdrawRequest;
 use App\Models\SellerWallet;
 use App\Models\Shop;
 use Exception;
@@ -32,10 +33,8 @@ class SellerWalletController extends BaseController
             return $this->Response(false, $e->getMessage(), [], 500);
         }
     }
-    public function withdraw(Request $request){
-        $this->ValidateRequest($request, [
-            'amount' => 'required|numeric|min:1',
-        ]);
+    public function withdraw(WithdrawRequest $request){
+        $data = $request->validated();
         try{
             $user = auth('api')->user();
             if(!$user){
@@ -49,11 +48,11 @@ class SellerWalletController extends BaseController
             if(!$wallet){
                 return $this->Response(false, 'Wallet not found',[], 404);
             }
-            if($wallet->withdrawable_balance < $request->amount){
+            if($wallet->withdrawable_balance < $data['amount']){
                 return $this->Response(false , 'Insufficient Balance. Please Recharge Your Wallet First', [], 400);
             }
-            $wallet->withdrawable_balance -= $request->amount;
-            $wallet->pending_balance += $request->amount;
+            $wallet->withdrawable_balance -= $data['amount'];
+            $wallet->pending_balance += $data['amount'];
             $wallet->save();
             return $this->Response(true, 'Withdrawal request sent successfully', $wallet, 200);
         }catch(Exception $e){

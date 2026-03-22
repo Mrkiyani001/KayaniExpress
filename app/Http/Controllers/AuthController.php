@@ -2,6 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\AuthRequests\ChangePassRequest;
+use App\Http\Requests\AuthRequests\ForgetPassRequest;
+use App\Http\Requests\AuthRequests\LoginRequest;
+use App\Http\Requests\AuthRequests\ResendOtpRequest;
+use App\Http\Requests\AuthRequests\ResetPassRequest;
+use App\Http\Requests\AuthRequests\SignupRequest;
+use App\Http\Requests\AuthRequests\VerifyOtpRequest;
 use App\Models\User;
 use Exception;
 use Illuminate\Http\Request;
@@ -10,25 +17,43 @@ use Illuminate\Support\Facades\Hash;
 use App\Notifications\SendOtpNotification;
 use Illuminate\Support\Facades\Log;
 use Spatie\Permission\Models\Role;
+use App\Services\RedisBloomFilter;
 
 class AuthController extends BaseController
 {
-    public function signup(Request $request){
+    private $bloomFilter;
+    
+    public function __construct(RedisBloomFilter $bloomFilter) {
+        $this->bloomFilter = $bloomFilter;
+    }
+    public function check_availability(Request $request){
         $this->ValidateRequest($request, [
-            'name' => 'required|string|max:20',
-            'email' => 'nullable|required_without:phone|email|unique:users,email',
-            'phone' => 'nullable|required_without:email|unique:users,phone',
-            'password' => 'required|confirmed|min:6',
-            'password_confirmation' => 'required|min:6'
+            'email' => 'nullable|required_without:phone|email',
+            'phone' => 'nullable|required_without:email|numeric',
         ]);
         try{
+            $identify = $request->input('email') ?? $request->input('phone');
+            if($identify){
+                if($this->bloomFilter->has($identify)){
+                    return $this->Response('error', 'User already exists', null, 409);
+                }
+            }
+            return $this->Response('success', 'User is available', null, 200);
+        }
+        catch(Exception $e){
+            return $this->Response('error', 'User check failed', $e->getMessage(), 500);
+        }
+    }
+    public function signup(SignupRequest $request){
+        $data = $request->validated();
+        try{    
         DB::beginTransaction();
         $otp = rand(100000, 999999);
         $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'phone' => $request->phone,
-            'password' => Hash::make($request->password),
+            'name' => $data['name'],
+            'email' => $data['email'] ?? null,
+            'phone' => $data['phone'] ?? null,
+            'password' => Hash::make($data['password']),
             'role_id' => Role::where('name', 'Customer')->first()->id,
             'otp' => $otp,
             'otp_expires_at' => now()->addMinutes(10),
@@ -36,7 +61,9 @@ class AuthController extends BaseController
 
         if ($user->email) {
             $user->notify(new SendOtpNotification($otp));
+          
         } 
+          $this->bloomFilter->add($user->email ?? $user->phone); // Store email in bloom filter to optimize later lookups
         
         if ($user->phone) {
              Log::info("SMS to {$user->phone}: Your OTP is {$otp}");
@@ -51,27 +78,23 @@ class AuthController extends BaseController
         return $this->Response('error', 'User creation failed', $e->getMessage(), 500);
     }
 }
-    public function VerifyOtp(Request $request){
-        $this->ValidateRequest($request, [
-            'email' => 'nullable|required_without:phone|email',
-            'phone' => 'nullable|required_without:email|numeric',
-            'otp' => 'required|numeric|digits:6',
-        ]);
+    public function VerifyOtp(VerifyOtpRequest $request){
+        $data = $request->validated();
         try{
             DB::beginTransaction();
             $check = [];
-            if($request->email){
-                $check['email'] = $request->email;
+            if(!empty($data['email'])){
+                $check['email'] = $data['email'];
             }
-            if($request->phone){
-                $check['phone'] = $request->phone;
+            if(!empty($data['phone'])){
+                $check['phone'] = $data['phone'];
             }
             $user = User::where($check)->first();
 
             if(!$user){
                 return $this->Response('error', 'User not found', null, 404);
             }
-            if($user->otp != $request->otp){
+            if($user->otp != $data['otp']){
                 return $this->Response('error', 'Invalid OTP', null, 400);
             }
             if($user->otp_expires_at < now()){
@@ -79,13 +102,13 @@ class AuthController extends BaseController
             }
             
             $user->is_verified = true;
-            $user->otp = $request->otp;
+            $user->otp = $data['otp'];
             $user->otp_expires_at = null;
             $user->save();
             DB::commit();
             $token = auth('api')->login($user);
             $user->load('role');
-            return $this->Response('success', 'User verified successfully', ['user' => $user, 'token' => $token], 200);
+            return $this->ResponseWithToken($token, $user);
         }
         catch(Exception $e){
             DB::rollBack();
@@ -93,19 +116,16 @@ class AuthController extends BaseController
         }
     }
 
-    public function resendOtp(Request $request){
-        $this->ValidateRequest($request, [
-            'email' => 'nullable|required_without:phone|email',
-            'phone' => 'nullable|required_without:email|numeric',
-        ]);
+    public function resendOtp(ResendOtpRequest $request){
+        $data = $request->validated();
         try{
             DB::beginTransaction();
             $check = [];
-            if($request->email){
-                $check['email'] = $request->email;
+            if(!empty($data['email'])){
+                $check['email'] = $data['email'];
             }
-            if($request->phone){
-                $check['phone'] = $request->phone;
+            if(!empty($data['phone'])){
+                $check['phone'] = $data['phone'];
             }
             $user = User::where($check)->first();
 
@@ -134,25 +154,21 @@ class AuthController extends BaseController
         }
     }
 
-    public function login(Request $request){
-        $this->ValidateRequest($request, [
-            'email' => 'nullable|required_without:phone|email',
-            'phone' => 'nullable|required_without:email|numeric',
-            'password' => 'required|min:6',
-        ]);
+    public function login(LoginRequest $request){
+        $data = $request->validated();
         try{
             $check = [];
-            if($request->email){
-                $check['email'] = $request->email;
+            if(!empty($data['email'])){
+                $check['email'] = $data['email'];
             }
-            if($request->phone){
-                $check['phone'] = $request->phone;
+            if(!empty($data['phone'])){
+                $check['phone'] = $data['phone'];
             }
             $user = User::where($check)->first();
             if(!$user){
                 return $this->Response('error', 'User not found', null, 404);
             }
-            if(!Hash::check($request->password, $user->password)){
+            if(!Hash::check($data['password'], $user->password)){
                 return $this->Response('error', 'Invalid password', null, 401);
             }
             if($user->is_verified == false){
@@ -193,19 +209,16 @@ class AuthController extends BaseController
             return $this->Response('error', 'Refresh token failed', $e->getMessage(), 500);
         }
     }
-    public function forgetPassword(Request $request){
-        $this->ValidateRequest($request, [
-             'email' => 'nullable|required_without:phone|email',
-             'phone' => 'nullable|required_without:email|numeric',
-        ]);
+    public function forgetPassword(ForgetPassRequest $request){
+        $data = $request->validated();
         try{
             DB::beginTransaction();
             $check = [];
-            if($request->email){
-                $check['email'] = $request->email;
+            if(!empty($data['email'])){
+                $check['email'] = $data['email'];
             }
-            if($request->phone){
-                $check['phone'] = $request->phone;
+            if(!empty($data['phone'])){
+                $check['phone'] = $data['phone'];
             }
             $user = User::where($check)->first();
             if(!$user){
@@ -229,34 +242,28 @@ class AuthController extends BaseController
             return $this->Response('error', 'OTP resend failed', $e->getMessage(), 500);
         }
     }
-    public function resetPassword(Request $request){
-        $this->ValidateRequest($request, [
-            'email' => 'nullable|required_without:phone|email',
-            'phone' => 'nullable|required_without:email|numeric',
-            'otp' => 'required|numeric|digits:6',
-            'password' => 'required|min:6',
-            'password_confirmation' => 'required|same:password',
-        ]);
+    public function resetPassword(ResetPassRequest $request){
+        $data = $request->validated();
         try{
             DB::beginTransaction();
             $check = [];
-            if($request->email){
-                $check['email'] = $request->email;
+            if(!empty($data['email'])){
+                $check['email'] = $data['email'];
             }
-            if($request->phone){
-                $check['phone'] = $request->phone;
+            if(!empty($data['phone'])){
+                $check['phone'] = $data['phone'];
             }
             $user = User::where($check)->first();
             if(!$user){
                 return $this->Response('error', 'User not found', null, 404);
             }
-            if($user->otp != $request->otp){
+            if($user->otp != $data['otp']){
                 return $this->Response('error', 'Invalid OTP', null, 400);
             }
             if($user->otp_expires_at < now()){
                 return $this->Response('error', 'OTP expired', null, 400);
             }
-            $user->password = Hash::make($request->password);
+            $user->password = Hash::make($data['password']);
             $user->otp = null;
             $user->otp_expires_at = null;
             $user->save();
@@ -268,12 +275,8 @@ class AuthController extends BaseController
             return $this->Response('error', 'Password reset failed', $e->getMessage(), 500);
         }
     }
-    public function changepassword(Request $request){
-        $this->ValidateRequest($request,[
-            'old_password' => 'required|min:6',
-            'password' => 'required|min:6',
-            'password_confirmation' => 'required|same:password',
-        ]);
+    public function changepassword(ChangePassRequest $request){
+        $data = $request->validated();
         try{
             DB::beginTransaction();
             $user = auth('api')->user();

@@ -47,7 +47,7 @@ class BaseController extends Controller
         ], 403);
     }
 
-    public function paginateData($paginate , $data){
+    public function PaginateData($paginate , $data){
         return [
             'item'=> $data,
             'pagination'=>[

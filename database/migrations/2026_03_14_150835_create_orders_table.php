@@ -21,7 +21,7 @@ return new class extends Migration
             $table->decimal('shipping_cost', 10, 2)->nullable();
             $table->enum('payment_method',['cash_on_delivery','online'])->default('cash_on_delivery');
             $table->enum('payment_status',['pending','paid','failed','refunded'])->default('pending');
-            $table->enum('order_status',['pending','confirmed','shipped','delivered','cancelled'])->default('pending');
+            $table->enum('order_status',['pending','processing','confirmed','shipped','delivered','cancelled'])->default('pending');
             $table->unsignedBigInteger('coupon_id')->nullable();
             $table->text('notes')->nullable();
             $table->timestamps();

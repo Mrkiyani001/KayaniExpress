@@ -2,6 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Shop\ApplyRequest;
+use App\Http\Requests\Shop\ApproveRequest;
+use App\Http\Requests\Shop\RejectRequest;
+use App\Http\Requests\Shop\SuspendRequest;
+use App\Http\Requests\Shop\UnSuspendRequest;
+use App\Http\Requests\Shop\UpdateRequest;
 use App\Models\SellerWallet;
 use App\Models\Shop;
 use Exception;
@@ -10,15 +16,9 @@ use Illuminate\Support\Str;
 
 class ShopController extends BaseController
 {
-    public function apply(Request $request)
+    public function apply(ApplyRequest $request)
     {
-        $this->ValidateRequest($request, [
-            'shop_name' => 'required|string|max:255',
-            'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:10240',
-            'description' => 'nullable|string|max:255',
-            'phone' => 'required|string|max:255',
-            'city_id' => 'required|exists:cities,id',
-        ]);
+        $data = $request->validated();
         try{
             $user = auth('api')->user();
             if(!$user){
@@ -31,20 +31,20 @@ class ShopController extends BaseController
                 $file = $request->file('logo');
                 $logoName = $this->upload($file, 'shops/logos');
             }
-            $check_slug = Shop::where('slug', Str::slug($request->shop_name))->count();
+            $check_slug = Shop::where('slug', Str::slug($data['shop_name']))->count();
             if($check_slug > 0){
-                $slug = Str::slug($request->shop_name) . '-' . ($check_slug + 1);
+                $slug = Str::slug($data['shop_name']) . '-' . ($check_slug + 1);
             }else{
-                $slug = Str::slug($request->shop_name);
+                $slug = Str::slug($data['shop_name']);
             }
             $shop = Shop::create([
                 'user_id' => $user->id,
-                'shop_name' => $request->shop_name,
+                'shop_name' => $data['shop_name'],
                 'slug' => $slug,
                 'logo' => $logoName ?? null,
-                'description' => $request->description ?? null,
-                'phone' => $request->phone,
-                'city_id' => $request->city_id,
+                'description' => $data['description'] ?? null,
+                'phone' => $data['phone'],
+                'city_id' => $data['city_id'],
                 'status' => 'pending',
             ]);
             return $this->Response(true, 'Shop applied successfully',$shop, 200);
@@ -52,10 +52,8 @@ class ShopController extends BaseController
             return $this->Response(false, $e->getMessage(),[], 500);
         }
     }
-    public function approve(Request $request){
-        $this->ValidateRequest($request, [
-            'shop_id' => 'required|exists:shops,id',
-        ]);
+    public function approve(ApproveRequest $request){
+        $data = $request->validated();
         try{
             $user = auth('api')->user();
             if(!$user){
@@ -64,7 +62,7 @@ class ShopController extends BaseController
             if(!$user->hasRole(['Super Admin', 'Admin'])){
                 return $this->Response(false, 'You are not authorized to approve a shop',[], 401);
             }
-            $shop = Shop::findOrFail($request->shop_id);
+            $shop = Shop::findOrFail($data['shop_id']);
             if($shop->status != 'pending'){
                 return $this->Response(false, 'Shop is not in pending status',[], 400);
             }
@@ -90,10 +88,8 @@ class ShopController extends BaseController
             return $this->Response(false, $e->getMessage(),[], 500);
         }
     }
-    public function reject(Request $request){
-        $this->ValidateRequest($request, [
-            'shop_id' => 'required|exists:shops,id',
-        ]);
+    public function reject(RejectRequest $request){
+        $data = $request->validated();
         try{
             $user = auth('api')->user();
             if(!$user){
@@ -102,7 +98,7 @@ class ShopController extends BaseController
             if(!$user->hasRole(['Super Admin', 'Admin'])){
                 return $this->Response(false, 'You are not authorized to reject a shop',[], 401);
             }
-            $shop = Shop::findOrFail($request->shop_id);
+            $shop = Shop::findOrFail($data['shop_id']);
             if($shop->status != 'pending'){
                 return $this->Response(false, 'Shop is not in pending status',[], 400);
             }
@@ -115,10 +111,8 @@ class ShopController extends BaseController
             return $this->Response(false, $e->getMessage(),[], 500);
         }
     }
-    public function suspend(Request $request){
-        $this->ValidateRequest($request, [
-            'shop_id' => 'required|exists:shops,id',
-        ]);
+    public function suspend(SuspendRequest $request){
+        $data = $request->validated();
         try{
             $user = auth('api')->user();
             if(!$user){
@@ -127,7 +121,7 @@ class ShopController extends BaseController
             if(!$user->hasRole(['Super Admin', 'Admin'])){
                 return $this->Response(false, 'You are not authorized to suspend a shop',[], 401);
             }
-            $shop = Shop::findOrFail($request->shop_id);
+            $shop = Shop::findOrFail($data['shop_id']);
             if($shop->status != 'approved'){
                 return $this->Response(false, 'Shop is not in approved status',[], 400);
             }
@@ -143,10 +137,8 @@ class ShopController extends BaseController
             return $this->Response(false, $e->getMessage(),[], 500);
         }
     }
-    public function unsuspend(Request $request){
-        $this->ValidateRequest($request, [
-            'shop_id' => 'required|exists:shops,id',
-        ]);
+    public function unsuspend(UnSuspendRequest $request){
+        $data = $request->validated();
         try{
             $user = auth('api')->user();
             if(!$user){
@@ -155,7 +147,7 @@ class ShopController extends BaseController
             if(!$user->hasRole(['Super Admin', 'Admin'])){
                 return $this->Response(false, 'You are not authorized to unsuspend a shop',[], 401);
             }
-            $shop = Shop::findOrFail($request->shop_id);
+            $shop = Shop::findOrFail($data['shop_id']);
             if($shop->status != 'suspended'){
                 return $this->Response(false, 'Shop is not in suspended status',[], 400);
             }
@@ -183,22 +175,14 @@ class ShopController extends BaseController
             return $this->Response(false, $e->getMessage(),[], 500);
         }
     }
-    public function updateShop(Request $request){
-        $this->ValidateRequest($request, [
-            'shop_id' => 'required|exists:shops,id',
-            'shop_name' => 'string|max:255',
-            'description' => 'string',
-            'phone' => 'string|max:255',
-            'city_id' => 'exists:cities,id',
-            'logo' => 'image|mimes:jpeg,png,jpg,gif,svg|max:10240',
-            'banner' => 'image|mimes:jpeg,png,jpg,gif,svg|max:10240',
-        ]);
+    public function updateShop(UpdateRequest $request){
+        $data = $request->validated();
         try{
             $user = auth('api')->user();
             if(!$user){
                 return $this->unauthorized();
             }
-            $shop = Shop::findOrFail($request->shop_id);
+            $shop = Shop::findOrFail($data['shop_id']);
             if($user->id != $shop->user_id){
                 return $this->Response(false, 'You are not authorized to update this shop',[], 401);
             }
@@ -213,12 +197,12 @@ class ShopController extends BaseController
                 $file = $request->file('banner');
                 $shop->banner = $this->upload($file, 'shops/banners');
             }
-            if($request->shop_name){
-                $check_slug = Shop::where('slug', Str::slug($request->shop_name))->where('id', '!=', $request->shop_id)->count();
+            if(isset($data['shop_name'])){
+                $check_slug = Shop::where('slug', Str::slug($data['shop_name']))->where('id', '!=', $data['shop_id'])->count();
                 if($check_slug > 0){
-                    $slug = Str::slug($request->shop_name) . '-' . $check_slug;
+                    $slug = Str::slug($data['shop_name']) . '-' . $check_slug;
                 }else{
-                    $slug = Str::slug($request->shop_name);
+                    $slug = Str::slug($data['shop_name']);
                 }
                 $shop->slug = $slug;
             }

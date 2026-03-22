@@ -8,6 +8,7 @@ use App\Http\Controllers\BrandController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CityController;
+use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\RolesController;
 use App\Http\Controllers\SellerWalletController;
@@ -15,6 +16,7 @@ use App\Http\Controllers\ShopController;
 use App\Http\Controllers\WishListController;
 use Illuminate\Support\Facades\Route;
 
+Route::post('check', [AuthController::class, 'check_availability']); // For Bloom filteration
 Route::post('signup', [AuthController::class, 'signup']);
 Route::post('verify/otp', [AuthController::class, 'VerifyOtp']);
 Route::post('resend/otp', [AuthController::class, 'resendOtp']);
@@ -175,8 +177,24 @@ Route::prefix('customer/wishlist')->group(function () {
     Route::get('/list', [WishListController::class, 'get_wishlist']);
 });
 
-
+Route::prefix('customer/order')->group(function () {
+    Route::post('/place', [OrderController::class, 'PlaceOrder']);
+    Route::get('/history', [OrderController::class, 'getOrderHistory']);
+    Route::get('/detail', [OrderController::class, 'getOrderDetail']);
+    Route::post('/cancel', [OrderController::class, 'CancelOrder']);
+    
 });
+Route::prefix('seller/order')->group(function () {
+    Route::get('/list', [OrderController::class, 'sellerorder']);
+    Route::post('/update/status', [OrderController::class, 'updateOrderStatus']);
+});
+
+Route::prefix('admin/order')->group(function () {
+    Route::get('/list', [OrderController::class, 'getallorder']);
+});
+});
+
+
 
 // Public Routes
 Route::get('/shop/{slug}', [ShopController::class, 'shopdetail']);

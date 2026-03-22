@@ -2,6 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\AddressRequests\CreateRequest;
+use App\Http\Requests\AddressRequests\DeleteRequest;
+use App\Http\Requests\AddressRequests\SetRequest;
+use App\Http\Requests\AddressRequests\UpdateRequest;
 use App\Models\Address;
 use App\Models\Area;
 use Exception;
@@ -9,34 +13,26 @@ use Illuminate\Http\Request;
 
 class AddressController extends BaseController
 {
-    public function create(Request $request){
-        $this->ValidateRequest($request,[
-            'full_name'=>'required|string|max:255',
-            'type'=>'required|in:home,work,other',
-            'city_id'=>'required|exists:cities,id',
-            'area_id'=>'required|exists:areas,id',
-            'phone'=>'required|string|max:255',
-            'address_line'=>'required|string|max:255',
-            'is_default'=>'required|boolean',
-        ]);
+    public function create(CreateRequest $request){
+        $data = $request->validated();
         try{
             $user = auth('api')->user();
             if(!$user){
                 return $this->unauthorized();
             }
-            $area = Area::where('id', $request->area_id)->where('city_id', $request->city_id)->first();
+            $area = Area::where('id', $data['area_id'])->where('city_id', $data['city_id'])->first();
             if(!$area){
                 return $this->Response(false, 'Area not found in the given city', null,404);
             }
             $address = Address::create([
                 'user_id'=>$user->id,
-                'full_name'=>$request->full_name,
-                'type'=>$request->type,
-                'city_id'=>$request->city_id,
-                'area_id'=>$request->area_id,
-                'phone'=>$request->phone,
-                'address_line'=>$request->address_line,
-                'is_default'=>$request->is_default,
+                'full_name'=>$data['full_name'],
+                'type'=>$data['type'],
+                'city_id'=>$data['city_id'],
+                'area_id'=>$data['area_id'],
+                'phone'=>$data['phone'],
+                'address_line'=>$data['address_line'],
+                'is_default'=>$data['is_default'],
             ]);
             return $this->Response(true, 'Address created successfully', $address,200);
         }catch(Exception $e){
@@ -44,29 +40,20 @@ class AddressController extends BaseController
         }
     }
 
-    public function update(Request $request){
-        $this->ValidateRequest($request,[
-            'id'=>'exists:addresses,id',
-            'full_name'=>'string|max:255',
-            'type'=>'in:home,work,other',
-            'city_id'=>'exists:cities,id',
-            'area_id'=>'exists:areas,id',
-            'phone'=>'string|max:255',
-            'address_line'=>'string|max:255',
-            'is_default'=>'boolean',
-        ]);
+    public function update(UpdateRequest $request){
+        $data = $request->validated();
         try{
             $user = auth('api')->user();
             if(!$user){
                 return $this->unauthorized();
             }
-            $address = Address::where('id', $request->id)->first();
+            $address = Address::where('id', $data['id'])->first();
             if(!$address){
                 return $this->Response(false, 'Address not found', null,404);
             }
-            if($request->area_id || $request->city_id){
-                $cityId = $request->city_id ?? $address->city_id;
-                $areaId = $request->area_id ?? $address->area_id;
+            if(isset($data['area_id']) || isset($data['city_id'])){
+                $cityId = $data['city_id'] ?? $address->city_id;
+                $areaId = $data['area_id'] ?? $address->area_id;
                 $area = Area::where('id', $areaId)->where('city_id', $cityId)->first();
                 if(!$area){
                     return $this->Response(false, 'Area not found in the given city', null,404);
@@ -87,16 +74,14 @@ class AddressController extends BaseController
         }
     }
 
-    public function delete(Request $request){
-        $this->ValidateRequest($request,[
-            'id'=>'required|exists:addresses,id',
-        ]);
+    public function delete(DeleteRequest $request){
+        $data = $request->validated();
         try{
             $user = auth('api')->user();
             if(!$user){
                 return $this->unauthorized();
             }
-            $address = Address::where('id', $request->id)->where('user_id', $user->id)->first();
+            $address = Address::where('id', $data['id'])->where('user_id', $user->id)->first();
             if(!$address){
                 return $this->Response(false, 'Address not found', null,404);
             }
@@ -123,10 +108,8 @@ class AddressController extends BaseController
             return $this->Response(false, 'Failed to fetch addresses', null,500);
         }
     }
-    public function setDefault(Request $request){
-        $this->ValidateRequest($request,[
-            'id'=>'required|exists:addresses,id',
-        ]);
+    public function setDefault(SetRequest $request){
+        $data = $request->validated();
         try{
             $user = auth('api')->user();
             if(!$user){
@@ -135,10 +118,10 @@ class AddressController extends BaseController
             Address::where('user_id', $user->id)->update([
                 'is_default'=>false,
             ]);
-            Address::where('id', $request->id)->where('user_id', $user->id)->update([
+            Address::where('id', $data['id'])->where('user_id', $user->id)->update([
                 'is_default'=>true,
             ]);
-            $address = Address::where('id', $request->id)
+            $address = Address::where('id', $data['id'])
             ->where('user_id', $user->id)
             ->with('user','city','area')
             ->first();
