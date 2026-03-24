@@ -4,8 +4,8 @@ namespace App\Repository;
 use App\Models\Address;
 
 class AddressRepo{
-    public function findAddress(array $data){
-        $address = Address::where('id', $data['address_id'])->firstOrFail();
+    public function findAddress($addressId){
+        $address = Address::where('id', $addressId)->firstOrFail();
         return $address;
     }
 }

@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('order_status_history', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('order_id');
-            $table->enum('status',['pending','confirmed','shipped','delivered','cancelled'])->default('pending');
+            $table->enum('status',['pending','processing','confirmed','shipped','delivered','cancelled'])->default('pending');
             $table->text('note')->nullable();
             $table->unsignedBigInteger('changed_by');
             $table->timestamps();

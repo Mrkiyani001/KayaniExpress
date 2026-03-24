@@ -86,18 +86,20 @@ class OrderService
             throw new Exception('Failed to fetch seller orders');
         }
     }
-    public function updateOrderStatus(array $data, $userId){
+    public function updateOrderItemStatus(array $data, $userId){
         try{
-            $order_item = $this->orderRepo->updateOrderStatus($data, $userId);
-            $order_item->update([
-                'delivery_status' => $data['delivery_status'],
+            $order_item = $this->orderRepo->updateOrderItemStatus($data, $userId);
+            
+            // Log history for the specific order item
+            $this->orderRepo->createorderstatushistory([
+                'order_id'      => $order_item->order_id,
+                'order_item_id' => $order_item->id,
+                'status'        => $data['delivery_status'], // bcz status ma hum automatic data chiya
+                'note'          => 'Order item status updated by seller',
+                'changed_by'    => $userId,
             ]);
-            OrderStatusHistory::create([
-                'order_id'   => $order_item->id,
-                'status'     => $data['delivery_status'],
-                'note'       => 'Order item status updated by seller',
-                'changed_by' => $userId,
-            ]);
+
+            $this->syncorderstatus($order_item->order_id);
             return $order_item;
 
         }catch(Exception $e){
@@ -224,6 +226,73 @@ class OrderService
         }catch(Exception $e){
             DB::rollBack();
             Log::error('Error processing order: ' . $e->getMessage());
+            throw new Exception($e->getMessage());
+        }
+    }
+    public function cancelstuckorder(){
+        try{
+            $stuckitems = $this->orderRepo->getstuckorder(1);
+            $count = 0;
+            foreach($stuckitems as $item){
+                $this->orderRepo->incrementstock([
+                    'product_sku_id' => $item->product_sku_id,
+                    'quantity'       => $item->qty,
+                ]);
+
+                // Update item status
+                $item->update([
+                    'delivery_status' => 'cancelled',
+                ]);
+
+                // Add to order history
+                $this->orderRepo->createorderstatushistory([
+                    'order_id'      => $item->order_id,
+                    'order_item_id' => $item->id,
+                    'status'        => 'cancelled',
+                    'note'          => 'Order item (' . $item->product_name . ') cancelled due to timeout',
+                    'changed_by'    => $item->order->user_id ?? 0,
+                ]);
+                $this->syncorderstatus($item->order_id);
+                $count++;
+            }
+            return ['message' => 'Stuck order items cancelled successfully', 'count' => $count];
+        }catch(Exception $e){
+            Log::error('Error cancelling stuck orders: ' . $e->getMessage());
+            throw new Exception($e->getMessage());
+        }
+    }
+    public function syncorderstatus(int $orderId ){
+        try{
+            $order = $this->orderRepo->getorderwithitem($orderId);
+            $item = $order->items;
+            $status = $item->pluck('delivery_status');
+            $allpending = $status->contains('pending');
+            $allconfirm = $status->contains('confirmed');
+            $allcancelled = $status->every(fn($status) => $status === 'cancelled');
+            if($allpending){
+                return;
+            }
+            if($allcancelled){
+                $this->orderRepo->updateorderstatus($order, ['order_status' => 'cancelled']);
+                $this->orderRepo->createorderstatushistory([
+                    'order_id'   => $order->id,
+                    'status'     => 'cancelled',
+                    'note'       => 'Order cancelled by seller',
+                    'changed_by' => $order->user_id,
+                ]);
+            }
+            if($allconfirm){
+                $this->orderRepo->updateorderstatus($order, ['order_status' => 'confirmed']);
+                $this->orderRepo->createorderstatushistory([
+                    'order_id'   => $order->id,
+                    'status'     => 'confirmed',
+                    'note'       => 'Order confirmed by seller',
+                    'changed_by' => $order->user_id,
+                ]);
+            }
+            return $order;
+        }catch(Exception $e){
+            Log::error('Error syncing order status: ' . $e->getMessage());
             throw new Exception($e->getMessage());
         }
     }

@@ -2,10 +2,6 @@
 
 namespace App\Jobs;
 
-use App\Models\Carts;
-use App\Models\Order;
-use App\Models\OrderStatusHistory;
-use App\Models\OrderItem;
 use App\Services\OrderService;
 use Exception;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -13,7 +9,6 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class PlaceOrder implements ShouldQueue

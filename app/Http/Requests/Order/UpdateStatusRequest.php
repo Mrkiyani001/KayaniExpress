@@ -25,6 +25,7 @@ class UpdateStatusRequest extends FormRequest
             'order_item_id' => 'required|exists:order_items,id',
             'delivery_status' => 'required|in:pending,processing,confirmed,shipped,delivered,cancelled'
             
+            
 
         ];
     }

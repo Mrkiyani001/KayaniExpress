@@ -21,6 +21,10 @@ class OrderRepo{
             return $orders;
 
     }
+    public function getorderwithitem(int $orderId){
+        $orderitem = Order::with('items')->where('id', $orderId)->firstOrFail();
+        return $orderitem;
+    }
     public function getOrderDetail(array $data, $userId){
         
             $order = Order::with('statusHistory', 'items.product_sku.product')
@@ -52,16 +56,16 @@ class OrderRepo{
             
         return $orders;
     }
-    public function updateOrderStatus(array $data, $userId){
+    public function updateOrderItemStatus(array $data, $userId){  // ya item ka status change ho rha ha
         // Order -> items -> shop. Order directly doesn't have 'shop'
         $order = OrderItem::where('id', $data['order_item_id'])
             ->whereHas('shop', function($query) use ($userId) {
                 $query->where('user_id', $userId);
-            })->first();
+            })->firstOrFail();
+        $order->update([
+            'delivery_status' => $data['delivery_status'],
+        ]);
         
-        if(!$order){
-            throw new Exception('Order not found or unauthorized');
-        }
 
         return $order; 
     } 
@@ -85,8 +89,8 @@ class OrderRepo{
     }
     public function decrementstock(array $data){
         $productsku = ProductSku::where('id', $data['product_sku_id'])
-        ->where('stock', '>=', $data['quantity'])
-        ->decrement('stock', $data['quantity']);
+        ->where('stock_qty', '>=', $data['quantity'])->firstOrFail();
+        $productsku->decrement('stock_qty', $data['quantity']);
         return $productsku;
     }
     public function createorderstatushistory(array $data){
@@ -96,5 +100,28 @@ class OrderRepo{
     public function updateorderstatushistory(array $data){
         $orderstatus = OrderStatusHistory::create($data);
         return $orderstatus;
+    }
+    public function getstuckorder(int $minutes){
+        $order = OrderItem::with('order')
+        ->where('delivery_status', 'pending')
+        ->where('created_at', '<', now()->subMinutes($minutes))
+        ->get();
+        return $order;
+    }
+
+    public function incrementstock(array $data){
+        $productsku = ProductSku::findOrFail($data['product_sku_id']);
+        $productsku->increment('stock_qty', $data['quantity']);
+        return $productsku;
+    }
+    public function updateorderstatus(Order $order , array $data){
+        $updateData = ['order_status' => $data['order_status']];
+        
+        if ($data['order_status'] == 'cancelled') {
+            $updateData['payment_status'] = 'cancelled';
+        }
+        
+        $order->update($updateData);
+        return $order;
     }
 }

@@ -97,7 +97,7 @@ public function updateOrderStatus(UpdateStatusRequest $request){
         if(!$user){
             return $this->unauthorized();
         }
-        $order = $this->orderService->updateOrderStatus($data, $user->id);
+        $order = $this->orderService->updateOrderItemStatus($data, $user->id);
         return $this->Response(true, 'Order status updated successfully', $order, 200);
     }catch(Exception $e){
         return $this->Response(false, 'Something went wrong: '.$e->getMessage(), [], 500);
