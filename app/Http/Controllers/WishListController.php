@@ -8,9 +8,14 @@ use App\Models\WishList;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Services\WishListService;
 
 class WishListController extends BaseController
 {
+    private $wishlistService;
+    public function __construct(WishListService $wishlistService){
+        $this->wishlistService = $wishlistService;
+    }
     public function add_to_wishlist(Add_Request $request){
         $data = $request->validated();
         try{
@@ -19,14 +24,7 @@ class WishListController extends BaseController
             if(!$user){
                 return $this->unauthorized();
             }
-            $wishlist = WishList::where('user_id', $user->id)->where('product_id', $data['product_id'])->first();
-            if($wishlist){
-                return $this->Response(false, 'Product already added to wishlist',[], 400);
-            }
-            $wishlist = WishList::create([
-                'user_id' => $user->id,
-                'product_id' => $data['product_id'],
-            ]);
+            $wishlist = $this->wishlistService->add_to_wishlist($user, $data);
             DB::commit();
             $wishlist->load('product');
             return $this->Response(true, 'Product added to wishlist successfully', $wishlist, 201);
@@ -41,7 +39,7 @@ class WishListController extends BaseController
             if(!$user){
                 return $this->unauthorized();
             }
-            $wishlist = WishList::where('user_id', $user->id)->with('product')->get();
+            $wishlist = $this->wishlistService->get_wishlist($user);
             return $this->Response(true, 'Wishlist fetched successfully', $wishlist, 200);
         }catch(Exception $e){
             return $this->Response(false, 'Something went wrong'.$e->getMessage(),[], 500);
@@ -55,14 +53,9 @@ class WishListController extends BaseController
             if(!$user){
                 return $this->unauthorized();
             }
-            $wishlist = WishList::where('user_id', $user->id)->where('product_id', $data['product_id'])->first();
-            if($wishlist){
-                $wishlist->delete();
-            }else{
-                return $this->Response(false, 'Wishlist not found',[], 404);
-            }
+            $wishlist = $this->wishlistService->delete_wishlist($user, $data);
             DB::commit();
-            return $this->Response(true, 'Wishlist deleted successfully', [], 200);
+            return $this->Response(true, 'Wishlist deleted successfully', $wishlist, 200);
         }catch(Exception $e){
             DB::rollBack();
             return $this->Response(false, 'Something went wrong'.$e->getMessage(),[], 500);

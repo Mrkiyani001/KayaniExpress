@@ -5,29 +5,24 @@ namespace App\Http\Controllers;
 use App\Http\Requests\SellerWallet\WithdrawRequest;
 use App\Models\SellerWallet;
 use App\Models\Shop;
+use App\Services\SellerWalletService;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class SellerWalletController extends BaseController
 {
+    private $sellerWalletService;
+    public function __construct(SellerWalletService $sellerWalletService){
+        $this->sellerWalletService = $sellerWalletService;
+    }
     public function balance(){
         try{
             $user = auth('api')->user();
             if(!$user){
                 return $this->unauthorized();
             }
-            if($user->hasRole(['Super Admin'])){
-                $wallet = SellerWallet::all();
-                return $this->Response(true, 'Wallet balance', $wallet, 200);
-            }
-            $shop = Shop::where('user_id', $user->id)->first();
-            if(!$shop){
-                return $this->Response(false, 'Shop not found',[], 404);
-            }
-            $wallet = SellerWallet::where('shop_id', $shop->id)->first();
-            if(!$wallet){
-                return $this->Response(false, 'Wallet not found',[], 404);
-            }
+            $wallet = $this->sellerWalletService->balance($user);
             return $this->Response(true, 'Wallet balance', $wallet, 200);
         }catch(Exception $e){
             return $this->Response(false, $e->getMessage(), [], 500);
@@ -36,26 +31,16 @@ class SellerWalletController extends BaseController
     public function withdraw(WithdrawRequest $request){
         $data = $request->validated();
         try{
+            DB::beginTransaction();
             $user = auth('api')->user();
             if(!$user){
                 return $this->unauthorized();
             }
-            $shop = Shop::where('user_id', $user->id)->first();
-            if(!$shop){
-                return $this->Response(false, 'Shop not found',[], 404);
-            }
-            $wallet = SellerWallet::where('shop_id', $shop->id)->first();
-            if(!$wallet){
-                return $this->Response(false, 'Wallet not found',[], 404);
-            }
-            if($wallet->withdrawable_balance < $data['amount']){
-                return $this->Response(false , 'Insufficient Balance. Please Recharge Your Wallet First', [], 400);
-            }
-            $wallet->withdrawable_balance -= $data['amount'];
-            $wallet->pending_balance += $data['amount'];
-            $wallet->save();
+            $wallet = $this->sellerWalletService->withdraw($data , $user);
+            DB::commit();
             return $this->Response(true, 'Withdrawal request sent successfully', $wallet, 200);
         }catch(Exception $e){
+            DB::rollBack();
             return $this->Response(false, $e->getMessage(), [], 500);
         }
     }

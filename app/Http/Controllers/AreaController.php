@@ -10,66 +10,64 @@ use App\Http\Requests\AreaRequests\UpdateRequest;
 use App\Models\Area;
 use Exception;
 use Illuminate\Http\Request;
+use Spatie\Permission\Models\Role;
+use App\Services\AreaService;
+use Illuminate\Support\Facades\DB;
 
 class AreaController extends BaseController
 {
+    private $areaService;
+    public function __construct(AreaService $areaService){
+        $this->areaService = $areaService;
+    }
     public function create(CreateRequest $request){
         $data = $request->validated();
         try{
+            DB::beginTransaction();
             $user = auth('api')->user();
             if(!$user){
                 return $this->unauthorized();
             }
-            if(!$user->hasRole(['Super Admin','Admin'])){
-                return $this->NotAllowed();
-            }
-            $area = Area::create([
-                'name' => $data['name'],
-                'city_id' => $data['city_id'],
-                'delivery_charge' => $data['delivery_charge'],
-                'status' => $data['status'],
-            ]);
+            $this->authorize('checkrole', Role::class);
+            $area = $this->areaService->createArea($data);
+            DB::commit();
             return $this->Response(true, 'Area created successfully', $area, 200);
         }catch(Exception $e){
+            DB::rollBack();
             return $this->Response(false, 'Area not created', $e->getMessage(), 500);
         }
     }
     public function update(UpdateRequest $request){
         $data = $request->validated();
         try{
+            DB::beginTransaction();
             $user = auth('api')->user();
             if(!$user){
                 return $this->unauthorized();
             }
-            if(!$user->hasRole(['Super Admin','Admin'])){
-                return $this->NotAllowed();
-            }
-            $area = Area::findOrFail($data['id']);
-            $area->update($request->only([
-                'name',
-                'city_id',
-                'delivery_charge',
-                'status',
-            ]));
+            $this->authorize('checkrole', Role::class);
+           $area = $this->areaService->updateArea($data);
+           DB::commit();
             return $this->Response(true, 'Area updated successfully', $area, 200);
         }catch(Exception $e){
+            DB::rollBack();
             return $this->Response(false, 'Area not updated', $e->getMessage(), 500);
         }
     }
     public function delete(DeleteRequest $request){
         $data = $request->validated();
         try{
+            DB::beginTransaction();
             $user = auth('api')->user();
             if(!$user){
                 return $this->unauthorized();
             }
-            if(!$user->hasRole(['Super Admin','Admin'])){
-                return $this->NotAllowed();
-            }
-            $area = Area::findOrFail($data['id']);
-            $area->delete();
-            return $this->Response(true, 'Area deleted successfully', null, 200);
+            $this->authorize('checkrole', Role::class);
+            $area = $this->areaService->deleteArea($data);
+            DB::commit();
+            return $this->Response(true, 'Area deleted successfully', $area, 200);
         }catch(Exception $e){
+            DB::rollBack();
             return $this->Response(false, 'Area not deleted', $e->getMessage(), 500);
         }
     }
@@ -81,10 +79,7 @@ class AreaController extends BaseController
             if(!$user){
                 return $this->unauthorized();
             }
-            $area = Area::with('city')
-            ->where('city_id', $data['city_id'])
-            ->where('status', 1)
-            ->paginate($limit);
+            $area = $this->areaService->city_wise_list($data, $limit);
             $data = $this->PaginateData($area, $area->items());
             return $this->Response(true, 'Area list', $data, 200);
         }catch(Exception $e){
@@ -94,18 +89,13 @@ class AreaController extends BaseController
     public function area_filter(AreaFilterRequest $request){
         $data = $request->validated();
         try{
+            $limit = (int) $request->input('limit', 10);
             $user = auth('api')->user();
             if(!$user){
                 return $this->unauthorized();
             }
-            $limit = (int) $request->input('limit', 10);
-            if(!$user->hasRole(['Super Admin','Admin'])){
-                return $this->NotAllowed();
-            }
-            $area = Area::with('city')
-            ->where('city_id', $data['city_id'])
-            ->where('status', $data['status'])
-            ->paginate($limit);
+            $this->authorize('checkrole', Role::class);
+            $area = $this->areaService->area_filter($data, $limit);
             $data = $this->PaginateData($area, $area->items());
             return $this->Response(true, 'Area list', $data, 200);
         }catch(Exception $e){

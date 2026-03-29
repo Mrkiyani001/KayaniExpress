@@ -67,7 +67,6 @@ public function CancelOrder(CancelOrderRequest $request){
         if(!$user){
             return $this->unauthorized();
         }
-        
         $order = $this->orderService->cancelOrder($data, $user->id);
         return $this->Response(true, 'Order cancelled successfully', $order, 200);
     }catch(Exception $e){

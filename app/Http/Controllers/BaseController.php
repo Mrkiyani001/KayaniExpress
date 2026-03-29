@@ -4,9 +4,11 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class BaseController extends Controller
 {
+    use AuthorizesRequests;
     public function ValidateRequest(Request $request, array $rules)
     {
         $validator = Validator::make($request->all(), $rules);

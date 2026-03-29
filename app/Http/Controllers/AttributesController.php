@@ -12,12 +12,18 @@ use App\Http\Requests\AttributeValue\GetAttRequest as AttributeValueGetAttReques
 use App\Http\Requests\AttributeValue\UpdateRequest as AttributeValueUpdateRequest;
 use App\Models\AttributeValue;
 use App\Models\ProductAttribute;
+use App\Services\AttributesService;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Spatie\Permission\Models\Role;
 
 class AttributesController extends BaseController
 {
+    private $AttributesService;
+    public function __construct(AttributesService $AttributesService){
+        $this->AttributesService = $AttributesService;
+    }
     public function create_attribute(CreateRequest $request){
         $data = $request->validated();
         try{
@@ -26,12 +32,8 @@ class AttributesController extends BaseController
             if(!$user){
                 return $this->unauthorized();
             }
-            if(!$user->hasRole(['Super Admin', 'Admin'])){
-                return $this->NotAllowed();
-            }
-            $attribute = ProductAttribute::create([
-                'name' => $data['name'],
-            ]);
+            $this->authorize('checkrole', Role::class);
+            $attribute = $this->AttributesService->create_attribute($data);
             DB::commit();
             return $this->Response(true, 'Attribute created successfully', $attribute, 200);
         }catch(Exception $e){
@@ -47,16 +49,8 @@ class AttributesController extends BaseController
             if(!$user){
                 return $this->unauthorized();
             }
-            if(isset($data['id'])){
-                $attributes = ProductAttribute::where('id', $data['id'])->with('values')->first();
-            }else{
-                $attributes = ProductAttribute::with('values')->get();
-            }
-            if($attributes){
-                return $this->Response(true, 'Attributes fetched successfully', $attributes, 200);
-            }else{
-                return $this->Response(false, 'Attributes fetched failed', 'Attribute not found', 404);
-            }
+            $attributes = $this->AttributesService->get_attributes($data);
+            return $this->Response(true, 'Attributes fetched successfully', $attributes, 200);
         }catch(Exception $e){
             return $this->Response(false, 'Attributes fetched failed', $e->getMessage(), 500);
         }
@@ -70,13 +64,8 @@ class AttributesController extends BaseController
             if(!$user){
                 return $this->unauthorized();
             }
-            if(!$user->hasRole(['Super Admin', 'Admin'])){
-                return $this->NotAllowed();
-            }
-            $attribute = ProductAttribute::find($data['id']);
-            $attribute->update([
-                'name' => $data['name'] ?? $attribute->name,
-            ]);
+            $this->authorize('checkrole', Role::class);
+            $attribute = $this->AttributesService->update_attribute($data);
             DB::commit();
             return $this->Response(true, 'Attribute updated successfully', $attribute, 200);
         }catch(Exception $e){
@@ -93,12 +82,8 @@ class AttributesController extends BaseController
             if(!$user){
                 return $this->unauthorized();
             }
-            if(!$user->hasRole(['Super Admin', 'Admin'])){
-                return $this->NotAllowed();
-            }
-            $attribute = ProductAttribute::findOrFail($request->id);
-            $attribute->values()->delete();
-            $attribute->delete();
+            $this->authorize('checkrole', Role::class);
+            $attribute = $this->AttributesService->delete_attribute($data);
             DB::commit();
             return $this->Response(true, 'Attribute deleted successfully', $attribute, 200);
         }catch(Exception $e){
@@ -114,13 +99,8 @@ class AttributesController extends BaseController
             if(!$user){
                 return $this->unauthorized();
             }
-            if(!$user->hasRole(['Super Admin', 'Admin'])){
-                return $this->NotAllowed();
-            }
-            $attributeValue = AttributeValue::create([
-                'attribute_id' => $data['attribute_id'],
-                'value' => $data['value'],
-            ]);
+            $this->authorize('checkrole', Role::class);
+            $attributeValue = $this->AttributesService->create_attribute_value($data);
             DB::commit();
             return $this->Response(true, 'Attribute value created successfully', $attributeValue, 200);
         }catch(Exception $e){
@@ -136,13 +116,8 @@ class AttributesController extends BaseController
             if(!$user){
                 return $this->unauthorized();
             }
-            if(!$user->hasRole(['Super Admin', 'Admin'])){
-                return $this->NotAllowed();
-            }
-            $attributeValue = AttributeValue::findOrFail($data['id']);
-            $attributeValue->update([
-                'value' => $data['value'] ?? $attributeValue->value,
-            ]);
+            $this->authorize('checkrole', Role::class);
+            $attributeValue = $this->AttributesService->update_attribute_value($data);
             DB::commit();
             return $this->Response(true, 'Attribute value updated successfully', $attributeValue, 200);
         }catch(Exception $e){
@@ -158,11 +133,8 @@ class AttributesController extends BaseController
             if(!$user){
                 return $this->unauthorized();
             }
-            if(!$user->hasRole(['Super Admin', 'Admin'])){
-                return $this->NotAllowed();
-            }
-            $attributeValue = AttributeValue::findOrFail($data['id']);
-            $attributeValue->delete();
+            $this->authorize('checkrole', Role::class);
+            $attributeValue = $this->AttributesService->delete_attribute_value($data);
             DB::commit();
             return $this->Response(true, 'Attribute value deleted successfully', $attributeValue, 200);
         }catch(Exception $e){
@@ -177,11 +149,7 @@ class AttributesController extends BaseController
             if(!$user){
                 return $this->unauthorized();
             }
-            if(isset($data['id'])){
-                $attributeValues = AttributeValue::where('id', $data['id'])->with('attribute')->first();
-            }else{
-                $attributeValues = AttributeValue::with('attribute')->get();
-            }
+            $attributeValues = $this->AttributesService->get_attribute_values($data);
             return $this->Response(true, 'Attribute values fetched successfully', $attributeValues, 200);
         }catch(Exception $e){
             return $this->Response(false, 'Attribute values fetched failed', $e->getMessage(), 500);

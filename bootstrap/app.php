@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -41,6 +42,15 @@ return Application::configure(basePath: dirname(__DIR__))
                     'message' => 'Validation failed',
                     'errors' => $e->errors(),
                 ], 422);
+            }
+        });
+        $exceptions->render(function (ModelNotFoundException $e, \Illuminate\Http\Request $request){
+            if($request->is('api/*')){
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Resource not found',
+                    'errors' => $e->getMessage(),
+                ], 404);
             }
         });
     })->create();

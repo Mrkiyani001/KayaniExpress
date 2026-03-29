@@ -23,7 +23,7 @@ class UpdateRequest extends FormRequest
     {
         return [
             'id' => 'required|exists:cities,id',
-            'name' => 'string|max:255',
+            'name' => 'string|max:255|unique:cities,name,'.$this->id,
             'status' => 'boolean',
         ];
     }

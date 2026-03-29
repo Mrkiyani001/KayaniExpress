@@ -7,31 +7,32 @@ use App\Http\Requests\City\DeleteRequest;
 use App\Http\Requests\City\FilterRequest;
 use App\Http\Requests\City\UpdateRequest;
 use App\Models\City;
+use App\Services\CityService;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Spatie\Permission\Models\Role;
 
 class CityController extends BaseController
 {
+    private $cityService;
+    public function __construct(CityService $cityService){
+        $this->cityService = $cityService;
+    }
     public function create(CreateRequest $request){
         $data = $request->validated();
         try{
+            DB::beginTransaction();
             $user = auth('api')->user();
             if(!$user){
                 return $this->unauthorized();
             }
-            if(!$user->hasRole('Super Admin')){
-                return $this->NotAllowed();
-            }
-            $city = City::where('name', $data['name'])->first();
-            if($city){
-                return $this->Response(false, 'City already exists', null, 400);
-            }
-            $city = City::create([
-                'name' => $data['name'],
-                'status' => $data['status'],
-            ]);
+            $this->authorize('checkrole', Role::class);
+            $city = $this->cityService->createcity($data);
+            DB::commit();
             return $this->Response(true, 'City created successfully', $city, 201);
     }catch(Exception $e){
+        DB::rollBack();
         return $this->Response(false, 'City not created', $e->getMessage(), 500);
     }
     }
@@ -39,17 +40,17 @@ class CityController extends BaseController
     public function update(UpdateRequest $request){
         $data = $request->validated();
         try{
+            DB::beginTransaction();
             $user = auth('api')->user();
             if(!$user){
                 return $this->unauthorized();
             }
-            if(!$user->hasRole('Super Admin')){
-                return $this->NotAllowed();
-            }
-            $city = City::findOrFail($data['id']);
-            $city->update($request->only(['name', 'status']));
+            $this->authorize('checkrole', Role::class);
+            $city = $this->cityService->updatecity($data);
+            DB::commit();
             return $this->Response(true, 'City updated successfully', $city, 200);
     }catch(Exception $e){
+        DB::rollBack();
     return $this->Response(false, 'City not updated', $e->getMessage(), 500);
 }
 }
@@ -57,17 +58,17 @@ class CityController extends BaseController
 public function delete(DeleteRequest $request){
     $data = $request->validated();
     try{
+        DB::beginTransaction();
         $user = auth('api')->user();
         if(!$user){
             return $this->unauthorized();
         }
-        if(!$user->hasRole('Super Admin')){
-            return $this->NotAllowed();
-        }
-        $city = City::findOrFail($data['id']);
-        $city->delete();
+        $this->authorize('checkrole', Role::class);
+        $city = $this->cityService->deletecity($data);
+        DB::commit();
         return $this->Response(true, 'City deleted successfully', null, 200);
     }catch(Exception $e){
+        DB::rollBack();
         return $this->Response(false, 'City not deleted', $e->getMessage(), 500);
     }
 }
@@ -79,7 +80,7 @@ public function list(Request $request){
         if(!$user){
             return $this->unauthorized();
         }
-        $cities = City::where('status', 1)->paginate($limit);
+        $cities = $this->cityService->getcitylist($limit);
         $data = $this->paginateData($cities, $cities->items());
         return $this->Response(true, 'Cities list', $data, 200);
     }catch(Exception $e){
@@ -89,15 +90,13 @@ public function list(Request $request){
 public function city_filter(FilterRequest $request){
     $data = $request->validated();
     try{
+        $limit = (int)$request->input('limit', 10);
         $user = auth('api')->user();
         if(!$user){
             return $this->unauthorized();
         }
-        $limit = (int)$request->input('limit', 10);
-        if(!$user->hasRole(['Super Admin' , 'Admin'])){
-            return $this->NotAllowed();
-        }
-        $cities = City::where('status', $data['status'])->paginate($limit);
+        $this->authorize('checkrole', Role::class);
+        $cities = $this->cityService->city_filter($data , $limit);
         $data = $this->paginateData($cities, $cities->items());
         return $this->Response(true, 'Cities list', $data, 200);
     }catch(Exception $e){
