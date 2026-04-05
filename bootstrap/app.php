@@ -18,6 +18,9 @@ return Application::configure(basePath: dirname(__DIR__))
                 return null;
             }
         });
+        $middleware->alias([
+            'single.device' => \App\Http\Middleware\SingleDeviceLogin::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->render(function (\Illuminate\Auth\AuthenticationException $e, \Illuminate\Http\Request $request) {

@@ -15,6 +15,7 @@ class OrderItem extends Model
         'qty',
         'unit_price',
         'total_price',
+        'discount_amount',
         'admin_commission',
         'seller_payout',
         'delivery_status',

@@ -7,6 +7,7 @@ use Exception;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class AuthService{
     private $authRepo;
@@ -80,6 +81,8 @@ class AuthService{
         try{
             $user = $this->find_user($data);
             $this->authRepo->pass_valid($data, $user);
+            $user->remember_token = Str::random(40);
+            $user->save();
             return $user;
         }
         catch(Exception $e){

@@ -17,19 +17,13 @@ class PlaceOrder implements ShouldQueue
 
     public int $tries = 3;   // retry count
     public int $backoff = 5; // wait time in seconds
-    protected $user_id;
-    protected $address_id;
-    protected $payment_method;
-    protected $shipping_cost;
+    protected $order;
     /**
      * Create a new job instance.
      */
-    public function __construct($user_id, $address_id, $payment_method, $shipping_cost)
+    public function __construct($order)
     {
-        $this->user_id = $user_id;
-        $this->address_id = $address_id;
-        $this->payment_method = $payment_method;
-        $this->shipping_cost = $shipping_cost;
+        $this->order = $order;
     }
 
     /**
@@ -37,12 +31,7 @@ class PlaceOrder implements ShouldQueue
      */
     public function handle(OrderService $orderService): void
     {
-        $orderService->processingorder(
-            $this->user_id,
-            $this->address_id,
-            $this->payment_method,
-            $this->shipping_cost
-        );
+        $orderService->processOrder($this->order);
     }
     public function failed(Exception $exception): void
     {

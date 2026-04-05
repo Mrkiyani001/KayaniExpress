@@ -61,7 +61,7 @@ class User extends Authenticatable implements JWTSubject
     }
     public function getJWTCustomClaims()
     {
-        return [];
+        return [ 'session_id' => $this->remember_token];
     }
 
     /**

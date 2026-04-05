@@ -23,7 +23,7 @@ Route::post('resend/otp', [AuthController::class, 'resendOtp']);
 Route::post('login', [AuthController::class, 'login']);
 Route::post('forget/password', [AuthController::class, 'forgetPassword']);
 Route::post('reset/password', [AuthController::class, 'resetPassword']);
-Route::group(['middleware' => 'auth:api'], function () {
+Route::group(['middleware' => ['auth:api','single.device']], function () {
     Route::get('logout', [AuthController::class, 'logout']);
     Route::get('refresh/token', [AuthController::class, 'RefreshToken']);
     Route::post('change/password', [AuthController::class, 'changepassword']); // Keeping original casing as seen in AuthController

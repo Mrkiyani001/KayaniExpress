@@ -30,7 +30,7 @@ class cancelUnconfirmed extends Command
     }
     public function handle()
     {
-        $cancelled = $this->orderService->cancelstuckorder();
+        $cancelled = $this->orderService->CancelStuckorder();
         $this->info("{$cancelled['count']} orders cancelled successfully.");
     }
 }
