@@ -4,9 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\WishList\Add_Request;
 use App\Http\Requests\WishList\Delete_Request;
-use App\Models\WishList;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use App\Services\WishListService;
 
@@ -20,7 +20,7 @@ class WishListController extends BaseController
         $data = $request->validated();
         try{
             DB::beginTransaction();
-            $user =auth('api')->user();
+            $user = Auth::user();
             if(!$user){
                 return $this->unauthorized();
             }
@@ -35,7 +35,7 @@ class WishListController extends BaseController
     }
     public function get_wishlist(Request $request){
         try{
-            $user =auth('api')->user();
+            $user = Auth::user();
             if(!$user){
                 return $this->unauthorized();
             }
@@ -49,7 +49,7 @@ class WishListController extends BaseController
         $data = $request->validated();
         try{
             DB::beginTransaction();
-            $user =auth('api')->user();
+            $user = Auth::user();
             if(!$user){
                 return $this->unauthorized();
             }

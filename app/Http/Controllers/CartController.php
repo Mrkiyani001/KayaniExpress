@@ -9,6 +9,7 @@ use App\Models\Carts;
 use App\Services\CartService;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class CartController extends BaseController
@@ -21,7 +22,7 @@ class CartController extends BaseController
         $data = $request->validated();
         try{
             DB::beginTransaction();
-            $user =auth('api')->user();
+            $user =Auth::user();
             if(!$user){
                 return $this->unauthorized();
             }
@@ -35,7 +36,7 @@ class CartController extends BaseController
     }
     public function get_cart(Request $request){
         try{
-            $user =auth('api')->user();
+            $user =Auth::user();
             if(!$user){
                 return $this->unauthorized();
             }
@@ -49,7 +50,7 @@ class CartController extends BaseController
         $data = $request->validated();
         try{
             DB::beginTransaction();
-            $user =auth('api')->user();
+            $user =Auth::user();
             if(!$user){
                 return $this->unauthorized();
             }
@@ -65,7 +66,7 @@ class CartController extends BaseController
         $data = $request->validated();
         try{
             DB::beginTransaction();
-            $user =auth('api')->user();
+            $user =Auth::user();
             if(!$user){
                 return $this->unauthorized();
             }

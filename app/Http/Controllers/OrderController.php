@@ -6,11 +6,10 @@ use App\Http\Requests\Order\CancelOrderRequest;
 use App\Http\Requests\Order\DetailRequest;
 use App\Http\Requests\Order\PlaceOrderRequest;
 use App\Http\Requests\Order\UpdateStatusRequest;
-use App\Jobs\PlaceOrder;
-use App\Models\Address;
 use App\Services\OrderService;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class OrderController extends BaseController
@@ -25,7 +24,7 @@ class OrderController extends BaseController
         $data = $request->validated();
         try {
             DB::beginTransaction();
-            $user = auth('api')->user();
+            $user = Auth::user();
             if (!$user) {
                 return $this->unauthorized();
             }
@@ -41,7 +40,7 @@ class OrderController extends BaseController
     {
         try {
             $limit = (int) $request->input('limit', 10);
-            $user = auth('api')->user();
+            $user = Auth::user();
             if (!$user) {
                 return $this->unauthorized();
             }
@@ -56,7 +55,7 @@ class OrderController extends BaseController
     {
         try {
             $data = $request->validated();
-            $user = auth('api')->user();
+            $user = Auth::user();
             if (!$user) {
                 return $this->unauthorized();
             }
@@ -72,7 +71,7 @@ class OrderController extends BaseController
     {
         try {
             $data = $request->validated();
-            $user = auth('api')->user();
+            $user = Auth::user();
             if (!$user) {
                 return $this->unauthorized();
             }
@@ -88,7 +87,7 @@ class OrderController extends BaseController
             $limit = (int) $request->input('limit', 10);
             $status = $request->input('status'); // Nullable filter parameter
 
-            $user = auth('api')->user();
+            $user = Auth::user();
             if (!$user) {
                 return $this->unauthorized();
             }
@@ -103,7 +102,7 @@ class OrderController extends BaseController
     {
         try {
             $data = $request->validated();
-            $user = auth('api')->user();
+            $user = Auth::user();
             if (!$user) {
                 return $this->unauthorized();
             }
@@ -117,7 +116,7 @@ class OrderController extends BaseController
     {
         try {
             $limit = (int) $request->input('limit', 10);
-            $user = auth('api')->user();
+            $user = Auth::user();
             if (!$user) {
                 return $this->unauthorized();
             }

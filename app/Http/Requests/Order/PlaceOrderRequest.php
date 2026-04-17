@@ -16,6 +16,7 @@ class PlaceOrderRequest extends FormRequest
         return [
             'address_id'     => 'required|exists:addresses,id',
             'payment_method' => 'required|in:cash_on_delivery,online',
+            'coupon_code'    => 'nullable|string|exists:coupons,code', // optional
         ];
     }
 }

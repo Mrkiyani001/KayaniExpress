@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\Response;
 
 class SingleDeviceLogin
@@ -15,10 +16,10 @@ class SingleDeviceLogin
      */
     public function handle(Request $request, Closure $next): Response
     {
-        $payload = auth('api')->payload();
-        $user = auth('api')->user();
+        $payload = Auth::payload();
+        $user = Auth::user();
         if($user->remember_token != $payload->get('session_id')){
-            auth('api')->logout();
+            Auth::logout();
             return response()->json([
                 'message' => 'Logged in from another device. Please login again.',
             ], 401);

@@ -11,6 +11,7 @@ use App\Http\Requests\Shop\UpdateRequest;
 use App\Services\ShopService;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Role;
 
@@ -24,7 +25,7 @@ class ShopController extends BaseController
         $data = $request->validated();
         try{
             DB::beginTransaction();
-            $user = auth('api')->user();
+            $user = Auth::user();
             if(!$user){
                 return $this->unauthorized();
             }
@@ -40,7 +41,7 @@ class ShopController extends BaseController
         $data = $request->validated();
         try{
             DB::beginTransaction();
-            $user = auth('api')->user();
+            $user = Auth::user();
             if(!$user){
                 return $this->unauthorized();
             }
@@ -57,7 +58,7 @@ class ShopController extends BaseController
         $data = $request->validated();
         try{
             DB::beginTransaction();
-            $user = auth('api')->user();
+            $user = Auth::user();
             if(!$user){
                 return $this->unauthorized();
             }
@@ -74,7 +75,7 @@ class ShopController extends BaseController
         $data = $request->validated();
         try{
             DB::beginTransaction();
-            $user = auth('api')->user();
+            $user = Auth::user();
             if(!$user){
                 return $this->unauthorized();
             }
@@ -91,7 +92,7 @@ class ShopController extends BaseController
         $data = $request->validated();
         try{
             DB::beginTransaction();
-            $user = auth('api')->user();
+            $user = Auth::user();
             if(!$user){
                 return $this->unauthorized();
             }
@@ -106,7 +107,7 @@ class ShopController extends BaseController
     }
     public function myshop(Request $request){
         try{
-            $user = auth('api')->user();
+            $user = Auth::user();
             if(!$user){
                 return $this->unauthorized();
             }
@@ -120,7 +121,7 @@ class ShopController extends BaseController
         $data = $request->validated();
         try{
             DB::beginTransaction();
-            $user = auth('api')->user();
+            $user = Auth::user();
             if(!$user){
                 return $this->unauthorized();
             }
@@ -142,7 +143,7 @@ class ShopController extends BaseController
     }
     public function shoplist(Request $request){
         try{
-            $user = auth('api')->user();
+            $user = Auth::user();
             if(!$user){
                 return $this->unauthorized();
             }

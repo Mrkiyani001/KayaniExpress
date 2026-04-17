@@ -8,8 +8,10 @@ use App\Http\Controllers\BrandController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CityController;
+use App\Http\Controllers\CouponController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\RolesController;
 use App\Http\Controllers\SellerWalletController;
 use App\Http\Controllers\ShopController;
@@ -59,6 +61,12 @@ Route::group(['middleware' => ['auth:api','single.device']], function () {
 // Admin Routes
     Route::prefix('admin')->group(function () {
     //Cities
+    Route::prefix('coupons')->group(function(){
+        Route::post('create', [CouponController::class, 'create_coupon']);
+        Route::put('update', [CouponController::class, 'update_coupon']);
+        Route::delete('delete', [CouponController::class, 'delete_coupon']);
+        Route::get('get', [CouponController::class, 'get_all_coupons']);
+    });    
     Route::prefix('city')->group(function () {
         Route::post('/create', [CityController::class, 'create']);
         Route::put('/update', [CityController::class, 'update']);
@@ -192,7 +200,25 @@ Route::prefix('seller/order')->group(function () {
 Route::prefix('admin/order')->group(function () {
     Route::get('/list', [OrderController::class, 'getallorder']);
 });
+
+// Review Routes
+Route::prefix('review')->group(function () {
+    Route::post('/create', [ReviewController::class, 'create']);
+    Route::get('/get', [ReviewController::class, 'get_review']);
+    Route::delete('/delete', [ReviewController::class, 'delete_review']);
 });
+
+Route::prefix('admin/review')->group(function () {
+    Route::get('/pending', [ReviewController::class, 'pending_review']);
+    Route::post('/approve', [ReviewController::class, 'approve_review']);
+});
+
+Route::prefix('customer/coupon')->group(function () {
+    Route::post('/apply', [CouponController::class, 'apply_coupon']);
+});
+
+});
+
 
 
 

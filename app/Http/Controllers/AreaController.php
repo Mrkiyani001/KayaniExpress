@@ -12,6 +12,7 @@ use Exception;
 use Illuminate\Http\Request;
 use Spatie\Permission\Models\Role;
 use App\Services\AreaService;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class AreaController extends BaseController
@@ -24,7 +25,7 @@ class AreaController extends BaseController
         $data = $request->validated();
         try{
             DB::beginTransaction();
-            $user = auth('api')->user();
+            $user = Auth::user();
             if(!$user){
                 return $this->unauthorized();
             }
@@ -41,7 +42,7 @@ class AreaController extends BaseController
         $data = $request->validated();
         try{
             DB::beginTransaction();
-            $user = auth('api')->user();
+            $user = Auth::user();
             if(!$user){
                 return $this->unauthorized();
             }
@@ -58,7 +59,7 @@ class AreaController extends BaseController
         $data = $request->validated();
         try{
             DB::beginTransaction();
-            $user = auth('api')->user();
+            $user = Auth::user();
             if(!$user){
                 return $this->unauthorized();
             }
@@ -75,7 +76,7 @@ class AreaController extends BaseController
         $data = $request->validated();
         try{
             $limit = (int) $request->input('limit', 10);
-            $user = auth('api')->user();
+            $user = Auth::user();
             if(!$user){
                 return $this->unauthorized();
             }
@@ -90,7 +91,7 @@ class AreaController extends BaseController
         $data = $request->validated();
         try{
             $limit = (int) $request->input('limit', 10);
-            $user = auth('api')->user();
+            $user = Auth::user();
             if(!$user){
                 return $this->unauthorized();
             }

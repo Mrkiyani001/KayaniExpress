@@ -9,6 +9,7 @@ use App\Http\Requests\AddressRequests\UpdateRequest;
 use Exception;
 use Illuminate\Http\Request;
 use App\Services\AddressService;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class AddressController extends BaseController
@@ -21,7 +22,7 @@ class AddressController extends BaseController
         $data = $request->validated();
         try{
             DB::beginTransaction();
-            $user = auth('api')->user();
+            $user = Auth::user();
             if(!$user){
                 return $this->unauthorized();
             }
@@ -38,7 +39,7 @@ class AddressController extends BaseController
         $data = $request->validated();
         try{
             DB::beginTransaction();
-            $user = auth('api')->user();
+            $user = Auth::user();
             if(!$user){
                 return $this->unauthorized();
             }
@@ -55,7 +56,7 @@ class AddressController extends BaseController
         $data = $request->validated();
         try{
             DB::beginTransaction();
-            $user = auth('api')->user();
+            $user = Auth::user();
             if(!$user){
                 return $this->unauthorized();
             }
@@ -70,7 +71,7 @@ class AddressController extends BaseController
 
     public function list(Request $request){
         try{
-            $user = auth('api')->user();
+            $user = Auth::user();
             if(!$user){
                 return $this->unauthorized();
             }
@@ -83,7 +84,7 @@ class AddressController extends BaseController
     public function setDefault(SetRequest $request){
         $data = $request->validated();
         try{
-            $user = auth('api')->user();
+            $user = Auth::user();
             if(!$user){
                 return $this->unauthorized();
             }

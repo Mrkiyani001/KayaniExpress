@@ -5,12 +5,11 @@ namespace App\Http\Controllers;
 use App\Http\Requests\Brand\CreateRequest;
 use App\Http\Requests\Brand\UpdateRequest;
 use App\Http\Requests\Brand\DeleteRequest;
-use App\Models\Brand;
 use Exception;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use Spatie\Permission\Models\Role;
 use App\Services\BrandService;
+use Illuminate\Support\Facades\Auth;
 
 class BrandController extends BaseController
 {
@@ -22,7 +21,7 @@ class BrandController extends BaseController
         $data = $request->validated();
         try{
             DB::beginTransaction();
-        $user = auth('api')->user();
+        $user = Auth::user();
         if(!$user){
             return $this->unauthorized();
         }
@@ -39,7 +38,7 @@ class BrandController extends BaseController
         $data = $request->validated();
         try{
             DB::beginTransaction();
-        $user = auth('api')->user();
+        $user = Auth::user();
         if(!$user){
             return $this->unauthorized();
         }
@@ -56,7 +55,7 @@ class BrandController extends BaseController
         $data = $request->validated();
         try{
             DB::beginTransaction();
-        $user = auth('api')->user();
+        $user = Auth::user();
         if(!$user){
             return $this->unauthorized();
         }
@@ -71,7 +70,7 @@ class BrandController extends BaseController
     }
     public function get_all_brands(){
         try{
-        $user = auth('api')->user();
+        $user = Auth::user();
         if(!$user){
             return $this->unauthorized();
         }
@@ -83,7 +82,7 @@ class BrandController extends BaseController
     }
     public function get_brand($slug){    
         try{
-        $user = auth('api')->user();
+        $user = Auth::user();
         if(!$user){
             return $this->unauthorized();
         }

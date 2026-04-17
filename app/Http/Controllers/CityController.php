@@ -10,6 +10,7 @@ use App\Models\City;
 use App\Services\CityService;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Role;
 
@@ -23,7 +24,7 @@ class CityController extends BaseController
         $data = $request->validated();
         try{
             DB::beginTransaction();
-            $user = auth('api')->user();
+            $user = Auth::user();
             if(!$user){
                 return $this->unauthorized();
             }
@@ -41,7 +42,7 @@ class CityController extends BaseController
         $data = $request->validated();
         try{
             DB::beginTransaction();
-            $user = auth('api')->user();
+            $user = Auth::user();
             if(!$user){
                 return $this->unauthorized();
             }
@@ -59,7 +60,7 @@ public function delete(DeleteRequest $request){
     $data = $request->validated();
     try{
         DB::beginTransaction();
-        $user = auth('api')->user();
+        $user = Auth::user();
         if(!$user){
             return $this->unauthorized();
         }
@@ -76,7 +77,7 @@ public function delete(DeleteRequest $request){
 public function list(Request $request){
     try{
         $limit = (int)$request->input('limit', 10);
-        $user = auth('api')->user();
+        $user = Auth::user();
         if(!$user){
             return $this->unauthorized();
         }
@@ -91,7 +92,7 @@ public function city_filter(FilterRequest $request){
     $data = $request->validated();
     try{
         $limit = (int)$request->input('limit', 10);
-        $user = auth('api')->user();
+        $user = Auth::user();
         if(!$user){
             return $this->unauthorized();
         }

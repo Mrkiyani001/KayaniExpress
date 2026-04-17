@@ -11,6 +11,7 @@ use App\Http\Requests\Product\Shop_wiseRequest;
 use App\Http\Requests\Product\UpdateRequest;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use App\Services\ProductService;
 class ProductController extends BaseController
@@ -23,7 +24,7 @@ class ProductController extends BaseController
         $data = $request->validated();
         try{
         DB::beginTransaction();
-        $user =auth('api')->user();
+        $user =Auth::user();
         if(!$user){
             return $this->unauthorized();
         }
@@ -42,7 +43,7 @@ public function update(UpdateRequest $request){
     $data = $request->validated();
     try{
         DB::beginTransaction();
-        $user =auth('api')->user();
+        $user =Auth::user();
         if(!$user){
             return $this->unauthorized();
         }
@@ -61,7 +62,7 @@ public function delete_product(DeleteRequest $request){
     $data = $request->validated();
     try{
         DB::beginTransaction();
-        $user =auth('api')->user();
+        $user =Auth::user();
         if(!$user){
             return $this->unauthorized();
         }
@@ -79,7 +80,7 @@ public function delete_product(DeleteRequest $request){
 public function my_products(Request $request){
     try{
         $limit =(int) $request->input('limit', 10) ;
-        $user =auth('api')->user();
+        $user =Auth::user();
         if(!$user){
             return $this->unauthorized();
         }

@@ -9,3 +9,4 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::command('order:cancel-unconfirmed')->everyMinute();
+Schedule::command('review:approve')->everyMinute();

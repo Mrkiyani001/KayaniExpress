@@ -11,11 +11,8 @@ use App\Http\Requests\Roles_Permission\DeleteRoleRequest;
 use App\Http\Requests\Roles_Permission\UnAssignPerFromRoleRequest;
 use App\Http\Requests\Roles_Permission\UnAssignRoleRequest;
 use App\Http\Requests\Roles_Permission\UserRolePerRequest;
-use App\Models\User;
-use App\Policies\RolePolicy;
 use Exception;
-use Illuminate\Http\Request;
-use Spatie\Permission\Models\Permission;
+use Illuminate\Support\Facades\Auth;
 use Spatie\Permission\Models\Role;
 use App\Services\PermissionsService;
 use Illuminate\Support\Facades\DB;
@@ -31,7 +28,7 @@ class RolesController extends BaseController
         $data = $request->validated();
         try {
             DB::beginTransaction();
-            $user = auth('api')->user();
+            $user = Auth::user();
             if (!$user) {
                 return $this->unauthorized();
             }
@@ -50,7 +47,7 @@ class RolesController extends BaseController
         $data = $request->validated();
         try {
             DB::beginTransaction();
-            $user = auth('api')->user();
+            $user = Auth::user();
             if (!$user) {
                 return $this->unauthorized();
             }
@@ -69,7 +66,7 @@ class RolesController extends BaseController
         $data = $request->validated();
         try {
             DB::beginTransaction();
-            $user = auth('api')->user();
+            $user = Auth::user();
             if (!$user) {
                 return $this->unauthorized();
             }
@@ -88,7 +85,7 @@ class RolesController extends BaseController
         $data = $request->validated();
         try {
             DB::beginTransaction();
-            $user = auth('api')->user();
+            $user = Auth::user();
             if (!$user) {
                 return $this->unauthorized();
             }
@@ -104,7 +101,7 @@ class RolesController extends BaseController
     public function getAllRoles()
     {
         try {
-            $user = auth('api')->user();
+            $user = Auth::user();
             if (!$user) {
                 return $this->unauthorized();
             }
@@ -119,7 +116,7 @@ class RolesController extends BaseController
         $data = $request->validated();
         try {
             DB::beginTransaction();
-            $user = auth('api')->user();
+            $user = Auth::user();
             if (!$user) {
                 return $this->unauthorized();
             }
@@ -136,7 +133,7 @@ class RolesController extends BaseController
         $data = $request->validated();
         try {
             DB::beginTransaction();
-            $user = auth('api')->user();
+            $user = Auth::user();
             if (!$user) {
                 return $this->unauthorized();
             }
@@ -151,7 +148,7 @@ class RolesController extends BaseController
     }
     public function getAllPermissions(){
         try {
-            $user = auth('api')->user();
+            $user = Auth::user();
             if (!$user) {
                 return $this->unauthorized();
             }
@@ -166,7 +163,7 @@ class RolesController extends BaseController
         $data = $request->validated();
         try {
             DB::beginTransaction();
-            $user = auth('api')->user();
+            $user = Auth::user();
             if (!$user) {
                 return $this->unauthorized();
             }
@@ -183,7 +180,7 @@ class RolesController extends BaseController
         $data = $request->validated();
         try {
             DB::beginTransaction();
-            $user = auth('api')->user();
+            $user = Auth::user();
             if (!$user) {
                 return $this->unauthorized();
             }
@@ -199,7 +196,7 @@ class RolesController extends BaseController
     public function getUserRolePermission(UserRolePerRequest $request){
         $data = $request->validated();
         try {
-            $user = auth('api')->user();
+            $user = Auth::user();
             if (!$user) {
                 return $this->unauthorized();
             }

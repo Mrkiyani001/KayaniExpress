@@ -10,11 +10,9 @@ use App\Http\Requests\AttributeValue\CreateRequest as AttributeValueCreateReques
 use App\Http\Requests\AttributeValue\DeleteRequest as AttributeValueDeleteRequest;
 use App\Http\Requests\AttributeValue\GetAttRequest as AttributeValueGetAttRequest;
 use App\Http\Requests\AttributeValue\UpdateRequest as AttributeValueUpdateRequest;
-use App\Models\AttributeValue;
-use App\Models\ProductAttribute;
 use App\Services\AttributesService;
 use Exception;
-use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Role;
 
@@ -28,7 +26,7 @@ class AttributesController extends BaseController
         $data = $request->validated();
         try{
             DB::beginTransaction();
-            $user = auth('api')->user();
+            $user = Auth::user();
             if(!$user){
                 return $this->unauthorized();
             }
@@ -45,7 +43,7 @@ class AttributesController extends BaseController
     public function get_attributes(GetAttRequest $request){
         $data = $request->validated();
         try{
-            $user = auth('api')->user();
+            $user = Auth::user();
             if(!$user){
                 return $this->unauthorized();
             }
@@ -60,7 +58,7 @@ class AttributesController extends BaseController
         $data = $request->validated();
         try{
             DB::beginTransaction();
-            $user = auth('api')->user();
+            $user = Auth::user();
             if(!$user){
                 return $this->unauthorized();
             }
@@ -78,7 +76,7 @@ class AttributesController extends BaseController
         $data = $request->validated();
         try{
             DB::beginTransaction();
-            $user = auth('api')->user();
+            $user = Auth::user();
             if(!$user){
                 return $this->unauthorized();
             }
@@ -95,7 +93,7 @@ class AttributesController extends BaseController
         $data = $request->validated();
         try{
             DB::beginTransaction();
-            $user = auth('api')->user();
+            $user = Auth::user();
             if(!$user){
                 return $this->unauthorized();
             }
@@ -112,7 +110,7 @@ class AttributesController extends BaseController
         $data = $request->validated();
         try{
             DB::beginTransaction();
-            $user = auth('api')->user();
+            $user = Auth::user();
             if(!$user){
                 return $this->unauthorized();
             }
@@ -129,7 +127,7 @@ class AttributesController extends BaseController
         $data = $request->validated();
         try{
             DB::beginTransaction();
-            $user = auth('api')->user();
+            $user = Auth::user();
             if(!$user){
                 return $this->unauthorized();
             }
@@ -145,7 +143,7 @@ class AttributesController extends BaseController
     public function get_attribute_values(AttributeValueGetAttRequest $request){
         $data = $request->validated();
         try{
-            $user = auth('api')->user();
+            $user = Auth::user();
             if(!$user){
                 return $this->unauthorized();
             }

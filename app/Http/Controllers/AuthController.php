@@ -14,6 +14,7 @@ use Exception;
 use Illuminate\Support\Facades\DB;
 use App\Services\RedisBloomFilter;
 use App\Services\AuthService;
+use Illuminate\Support\Facades\Auth;
 
 class AuthController extends BaseController
 {
@@ -60,7 +61,7 @@ class AuthController extends BaseController
             DB::beginTransaction();
             $user = $this->authService->verify_otp($data);
             DB::commit();
-            $token = auth('api')->login($user);
+            $token = Auth::login($user);
             $user->load('role');
             return $this->ResponseWithToken($token, $user);
         }
@@ -88,7 +89,7 @@ class AuthController extends BaseController
         $data = $request->validated();
         try{
             $user = $this->authService->login($data);
-            $token = auth('api')->login($user);
+            $token = Auth::login($user);
             $user->load('role');
             return $this->ResponseWithToken($token, $user);
         }
@@ -102,7 +103,7 @@ class AuthController extends BaseController
             if(!$user){
                 return $this->unauthorized();
             }
-            auth('api')->logout();
+            Auth::logout();
             return $this->Response('success', 'Logout successfully', null, 200);
         }
         catch(Exception $e){
@@ -116,7 +117,7 @@ class AuthController extends BaseController
             if(!$user){
                 return $this->unauthorized();
             }
-            $token = auth('api')->refresh();
+            $token = Auth::refresh();
             return $this->ResponseWithToken($token);
         }
         catch(Exception $e){
@@ -153,12 +154,12 @@ class AuthController extends BaseController
         $data = $request->validated();
         try{
             DB::beginTransaction();
-            $user = auth('api')->user();
+            $user = Auth::user();
             if(!$user){
                 return $this->unauthorized();
             }
             $user = $this->authService->change_password($data, $user);
-            auth('api')->logout();
+            Auth::logout();
             DB::commit();
             return $this->Response('success', 'Password changed successfully. Please login again.', null, 200);
         }

@@ -3,6 +3,7 @@ namespace App\Repository;
 
 use App\Models\Address;
 use App\Models\Carts;
+use App\Models\Coupon;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\OrderStatusHistory;
@@ -21,13 +22,14 @@ class OrderRepo{
         $address = Address::where('id', $address_id)->firstOrFail();
         return $address;
     }
-    public function createorder($user, $data, $shipping_cost){
+    public function createorder($user, $data, $shipping_cost, $coupon_id = null){
         $order = Order::create(['order_no' => 'ORD-'. time().rand(1000,9999),
                 'user_id' => $user->id,
                 'address_id' => $data['address_id'],
                 'grand_total' => 0,
                 'shipping_cost' => $shipping_cost,
                 'payment_method' => $data['payment_method'],
+                'coupon_id' => $coupon_id,
         ]);
         return $order;
     }
@@ -53,10 +55,16 @@ class OrderRepo{
             'stock_qty' => $product_sku->stock_qty - $qty,
         ]);
     }
-    public function update_grand_total($order, $grand_total, $total_discount_amount){
+    public function update_grand_total($order, $grand_total, $total_discount_amount, $coupon_discount = 0){
         $order->update([
-            'grand_total' => $grand_total + $order->shipping_cost,
-            'discount' => $total_discount_amount,
+            'grand_total' => $grand_total + $order->shipping_cost - $coupon_discount,
+            'discount' => $total_discount_amount + $coupon_discount,
+        ]);
+    }
+    public function apply_coupon_usage($coupon_id){
+        $coupon = Coupon::where('id', $coupon_id)->firstOrFail();
+        $coupon->update([
+            'used_count' => $coupon->used_count + 1,
         ]);
     }
     public function create_order_status_history($order_id,$status, $order_item_id = null, $note = null, $changed_by = null){

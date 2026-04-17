@@ -18,12 +18,14 @@ class PlaceOrder implements ShouldQueue
     public int $tries = 3;   // retry count
     public int $backoff = 5; // wait time in seconds
     protected $order;
+    protected $coupon_id;
     /**
      * Create a new job instance.
      */
-    public function __construct($order)
+    public function __construct($order, $coupon_id = null)
     {
         $this->order = $order;
+        $this->coupon_id = $coupon_id;
     }
 
     /**
@@ -31,7 +33,7 @@ class PlaceOrder implements ShouldQueue
      */
     public function handle(OrderService $orderService): void
     {
-        $orderService->processOrder($this->order);
+        $orderService->processOrder($this->order, $this->coupon_id);
     }
     public function failed(Exception $exception): void
     {

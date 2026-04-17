@@ -2,28 +2,40 @@
 namespace App\Services;
 
 use App\Jobs\PlaceOrder;
+use App\Models\Coupon;
+use App\Repository\CouponRepo;
 use App\Repository\OrderRepo;
 use Exception;
 use Illuminate\Support\Facades\DB;
 
 class OrderService{
     private $orderRepo;
-    public function __construct(OrderRepo $orderRepo){
-        $this->orderRepo = $orderRepo;
+    private $couponRepo;
+    public function __construct(OrderRepo $orderRepo, CouponRepo $couponRepo){
+        $this->orderRepo  = $orderRepo;
+        $this->couponRepo = $couponRepo;
     }
     public function placeorder($user, $data){
         try{
             $cart = $this->orderRepo->get_cart($user->id);
             $address = $this->orderRepo->get_address($data['address_id']);
             $shipping_cost = $address->area->delivery_charge ?? 0;
-            $order = $this->orderRepo->createorder($user, $data, $shipping_cost);
-            PlaceOrder::dispatch($order);
+
+            // Repo se validate karo — ek hi jagah logic hai
+            $coupon_id = null;
+            if (!empty($data['coupon_code'])) {
+                $coupon = $this->couponRepo->validate_coupon($data['coupon_code']);
+                $coupon_id = $coupon->id;
+            }
+
+            $order = $this->orderRepo->createorder($user, $data, $shipping_cost, $coupon_id);
+            PlaceOrder::dispatch($order, $coupon_id);
             return $order;
         }catch(Exception $e){
             throw new Exception($e->getMessage());
         }
     }
-    public function processOrder($order ){
+    public function processOrder($order, $coupon_id = null){
         try{
             DB::beginTransaction();
             $cart = $this->orderRepo->get_cart($order->user_id);
@@ -61,7 +73,20 @@ class OrderService{
                 );
                 $this->orderRepo->decrement_stock($item->product_sku_id, $item->qty);
             }
-            $this->orderRepo->update_grand_total($order, $grand_total, $total_discount_amount);
+
+            // --- Coupon Discount via Repo (single source of truth) ---
+            $coupon_discount = 0;
+            if ($coupon_id) {
+                $coupon = Coupon::find($coupon_id);
+                if ($coupon) {
+                    if ($coupon->min_order === null || $grand_total >= $coupon->min_order) {
+                        $coupon_discount = $this->couponRepo->calculate_discount($coupon, $grand_total);
+                        $this->orderRepo->apply_coupon_usage($coupon_id);
+                    }
+                }
+            }
+
+            $this->orderRepo->update_grand_total($order, $grand_total, $total_discount_amount, $coupon_discount);
             $this->orderRepo->create_order_status_history($order->id, 'pending', null, 'Order placed successfully', $order->user_id);
             $this->orderRepo->clear_cart($order->user_id);
             DB::commit();

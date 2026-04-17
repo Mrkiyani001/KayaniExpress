@@ -8,6 +8,7 @@ use App\Models\Shop;
 use App\Services\SellerWalletService;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class SellerWalletController extends BaseController
@@ -18,7 +19,7 @@ class SellerWalletController extends BaseController
     }
     public function balance(){
         try{
-            $user = auth('api')->user();
+            $user = Auth::user();
             if(!$user){
                 return $this->unauthorized();
             }
@@ -32,7 +33,7 @@ class SellerWalletController extends BaseController
         $data = $request->validated();
         try{
             DB::beginTransaction();
-            $user = auth('api')->user();
+            $user = Auth::user();
             if(!$user){
                 return $this->unauthorized();
             }

@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Spatie\Permission\Models\Role;
 use App\Services\CategoryService;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class CategoryController extends BaseController
@@ -24,7 +25,7 @@ class CategoryController extends BaseController
         $data = $request->validated();
         try{
             DB::beginTransaction();
-        $user = auth('api')->user();
+        $user = Auth::user();
         if(!$user){
             return $this->unauthorized();
         }
@@ -41,7 +42,7 @@ public function update_category(UpdateRequest $request){
     $data = $request->validated();
     try{
     DB::beginTransaction();
-    $user = auth('api')->user();
+    $user = Auth::user();
     if(!$user){
         return $this->unauthorized();
     }
@@ -55,25 +56,25 @@ public function update_category(UpdateRequest $request){
     }  
 }
  public function delete_category(DeleteRequest $request){
-        $data = $request->validated();
-        try{
-            DB::beginTransaction();
-            $user = auth('api')->user();
-            if(!$user){
-                return $this->unauthorized();
-            }
-            $this->authorize('checkrole', Role::class);
-            $category = $this->CategoryService->delete_category($data);
-            DB::commit();
-            return $this->Response(true, 'Category deleted successfully',[], 200);
-        }catch(Exception $e){
-            DB::rollBack();
-            return $this->Response(false, $e->getMessage(),[], 500);
+    $data = $request->validated();
+    try{
+        DB::beginTransaction();
+        $user = Auth::user();
+        if(!$user){
+            return $this->unauthorized();
         }
+        $this->authorize('checkrole', Role::class);
+        $category = $this->CategoryService->delete_category($data);
+        DB::commit();
+        return $this->Response(true, 'Category deleted successfully',[], 200);
+    }catch(Exception $e){
+        DB::rollBack();
+        return $this->Response(false, $e->getMessage(),[], 500);
     }
+}
     public function get_category($slug){
         try{
-            $user = auth('api')->user();
+            $user = Auth::user();
             if(!$user){
                 return $this->unauthorized();
             }
@@ -85,7 +86,7 @@ public function update_category(UpdateRequest $request){
     }
     public function get_categories(){
         try{
-            $user = auth('api')->user();
+            $user = Auth::user();
             if(!$user){
                 return $this->unauthorized();
             }

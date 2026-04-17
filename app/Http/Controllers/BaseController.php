@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Support\Facades\Auth;
 
 class BaseController extends Controller
 {
@@ -38,7 +39,7 @@ class BaseController extends Controller
         return response()->json([
             'token' => $token,
             'token_type' => 'bearer',
-            'expires_in' => auth('api')->factory()->getTtl() * 36000,
+            'expires_in' => Auth::factory()->getTtl() * 36000,
             'user' => $user,
         ]);
     }
