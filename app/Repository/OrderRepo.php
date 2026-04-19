@@ -8,9 +8,11 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\OrderStatusHistory;
 use App\Models\ProductSku;
+use App\Events\PublishRabbitMQEvent;
 use Exception;
 
 class OrderRepo{
+
     public function get_cart($user_id){
         $cart = Carts::where('user_id', $user_id)->get();
         if($cart->isEmpty()){
@@ -89,6 +91,15 @@ class OrderRepo{
         $order->update([
             'order_status' => 'cancelled',
         ]);
+        $data = [
+            'event'    => 'order.cancelled',
+            'order_id' => $order->id,
+            'user_id'  => $order->user_id,
+            'order_no' => $order->order_no,
+            'amount'   => $order->grand_total,
+            'timestamp'=> now()->toISOString(),
+        ];
+        PublishRabbitMQEvent::dispatch('order.cancelled', 'order.cancelled', $data);
         return $order;
     }
     public function get_stuck_order(int $minutes){
@@ -108,6 +119,15 @@ class OrderRepo{
         $order_item->update([
             'delivery_status' => $status,
         ]);
+        $data = [
+            'event'    => 'order.' . $status,
+            'order_id' => $order_item->order_id,
+            'user_id'  => $order_item->order->user_id,
+            'order_no' => $order_item->order->order_no,
+            'amount'   => $order_item->order->grand_total,
+            'timestamp'=> now()->toISOString(),
+        ];
+        PublishRabbitMQEvent::dispatch('order.' . $status, 'order.' . $status, $data);
     }
     public function get_order($order){
         $orderItems = Order::with('items')->where('id', $order->id)->firstOrFail();

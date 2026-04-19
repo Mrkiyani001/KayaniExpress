@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  # ── Message Broker ──────────────────────────
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: kayani_rabbitmq
+    ports:
+      - "5672:5672"    # Services isse connect karti hain (AMQP)
+      - "15672:15672"  # Browser se monitor: http://localhost:15672
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS}
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+
+  # ── Redis (Caching Only — Not for messaging) ──
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+
+  # ── Per-Service Databases ─────────────────────
+  db-notifications:
+    image: mysql:8
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: db_notifications
+    ports:
+      - "3307:3306"   # 3307 taake existing MySQL (3306) se clash na ho
+
+  db-wallet:
+    image: mysql:8
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: db_wallet
+    ports:
+      - "3308:3306"
+
+  db-promotions:
+    image: mysql:8
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: db_promotions
+    ports:
+      - "3309:3306"
+
+volumes:
+  rabbitmq_data:

@@ -5,6 +5,7 @@ use App\Jobs\PlaceOrder;
 use App\Models\Coupon;
 use App\Repository\CouponRepo;
 use App\Repository\OrderRepo;
+use App\Events\PublishRabbitMQEvent;
 use Exception;
 use Illuminate\Support\Facades\DB;
 
@@ -30,6 +31,15 @@ class OrderService{
 
             $order = $this->orderRepo->createorder($user, $data, $shipping_cost, $coupon_id);
             PlaceOrder::dispatch($order, $coupon_id);
+            $data = [
+                'event'    => 'order.placed',
+                'order_id' => $order->id,
+                'user_id'  => $order->user_id,
+                'order_no' => $order->order_no,
+                'amount'   => $order->grand_total,
+                'timestamp'=> now()->toISOString(),
+            ];
+            PublishRabbitMQEvent::dispatch('order.placed', 'order.placed', $data);
             return $order;
         }catch(Exception $e){
             throw new Exception($e->getMessage());

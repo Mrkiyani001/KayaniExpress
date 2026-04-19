@@ -12,9 +12,11 @@
         "php": "^8.2",
         "laravel/framework": "^12.0",
         "laravel/tinker": "^2.10.1",
+        "php-amqplib/php-amqplib": "*",
         "php-open-source-saver/jwt-auth": "^2.8",
         "pleonasm/bloom-filter": "*",
-        "spatie/laravel-permission": "^7.2"
+        "spatie/laravel-permission": "^7.2",
+        "vladimir-yuldashev/laravel-queue-rabbitmq": "*"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",

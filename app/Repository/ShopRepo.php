@@ -3,10 +3,15 @@ namespace App\Repository;
 
 use App\Models\SellerWallet;
 use App\Models\Shop;
+use App\Services\RabbitMQService;
 use Exception;
 use Illuminate\Support\Str;
 
 class ShopRepo{
+    private $rabbitmqService;
+    public function __construct(RabbitMQService $rabbitmqService){
+        $this->rabbitmqService = $rabbitmqService;
+    }
     public function apply($data , $user , $logoName , $slug){
         if($user->shop){
             throw new Exception('You already have a shop');
@@ -21,6 +26,14 @@ class ShopRepo{
                 'city_id' => $data['city_id'],
                 'status' => 'pending',
             ]);
+            $data = [
+                'event'    => 'shop.applied',
+                'shop_id' => $shop->id,
+                'user_id'  => $shop->user_id,
+                'shop_name' => $shop->shop_name,
+                'timestamp'=> now()->toISOString(),
+            ];
+            $this->rabbitmqService->publish('shop.applied', 'shop.applied', $data);
             return $shop;
     }
     public function approve($data){
@@ -36,7 +49,15 @@ class ShopRepo{
                 'shop_id' => $shop->id,
             ]);
             $shop->load('user.roles');
-            return $shop;
+            $data = [
+                'event'    => 'shop.approved',
+                'shop_id' => $shop->id,
+                'user_id'  => $shop->user_id,
+                'shop_name' => $shop->shop_name,
+                'timestamp'=> now()->toISOString(),
+            ];
+            $this->rabbitmqService->publish('shop.approved', 'shop.approved', $data);
+            return $shop;   
     }
     public function reject($data){
         $shop = Shop::findOrFail($data['shop_id']);
