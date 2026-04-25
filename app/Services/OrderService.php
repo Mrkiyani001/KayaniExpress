@@ -39,7 +39,7 @@ class OrderService{
                 'amount'   => $order->grand_total,
                 'timestamp'=> now()->toISOString(),
             ];
-            PublishRabbitMQEvent::dispatch('order.placed', 'order.placed', $data);
+            PublishRabbitMQEvent::dispatch('order.events', 'order.placed', $data);
             return $order;
         }catch(Exception $e){
             throw new Exception($e->getMessage());

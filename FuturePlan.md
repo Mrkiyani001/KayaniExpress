@@ -53,7 +53,7 @@ order-service → "Order place hua" letter likhao → POST OFFICE mein daalo
 | Service | Port | Status | Database | Responsibility |
 |---------|------|--------|----------|----------------|
 | Monolith (existing) | 8000 | ✅ Done | `e-commerce` | Auth, Orders, Products, Coupons, Reviews |
-| notification-service | 8006 | 🔴 Remaining | `db_notifications` | Email/DB notifications |
+| notification-service | 8001 | ✅ Done | `db_notifications` | Email/DB notifications |
 | wallet-service | 8007 | 🔴 Remaining | `db_wallet` | Seller payouts, withdrawals |
 | promotion-service | 8008 | 🔴 Remaining | `db_promotions` | Flash sales, Banners |
 | analytics-service | 8009 | 🔴 Remaining | `db_analytics` | Dashboards, Reports |
@@ -467,35 +467,41 @@ server {
 ## ✅ Complete Checklist
 
 ### Phase 1 — Infrastructure
-- [ ] Docker Desktop install (agar nahi)
-- [ ] Parent folder banao: `kayaniexpress-microservices/`
-- [ ] `docker-compose.yml` banao
-- [ ] `docker compose up -d` run karo
-- [ ] RabbitMQ UI check: http://localhost:15672
+- [x] Docker Desktop install (agar nahi)
+- [x] Parent folder banao: `kayaniexpress-microservices/`
+- [x] `docker-compose.yml` banao (RabbitMQ + Redis + DBs)
+- [x] `docker compose up -d` run karo
+- [x] RabbitMQ UI check: http://localhost:15672
 
 ### Phase 2 — Monolith Events
-- [ ] `composer require vladimir-yuldashev/laravel-queue-rabbitmq`
-- [ ] `composer require php-amqplib/php-amqplib`
-- [ ] `.env` mein RabbitMQ settings add karo
-- [ ] `OrderService::processOrder()` mein `order.placed` event publish karo
-- [ ] `order.delivered` aur `order.cancelled` events add karo
+- [x] `composer require vladimir-yuldashev/laravel-queue-rabbitmq`
+- [x] `composer require php-amqplib/php-amqplib`
+- [x] `.env` mein RabbitMQ settings add karo
+- [x] `PublishRabbitMQEvent` + `SendRabbitMQMessageListener` banao
+- [x] `AppServiceProvider` mein Event register karo
+- [x] `OrderService` mein `order.placed` event publish karo
+- [x] `OrderRepo` mein `order.cancelled` aur `order.delivered` events add karo
 - [ ] `shop.approved` event add karo (ShopService mein)
-- [ ] Test: Order place karo → RabbitMQ UI mein message check karo
+- [x] Test: Order place karo → RabbitMQ UI mein message check karo ✅
 
-### Phase 3 — Notification Service
-- [ ] `notification-service` folder mein fresh Laravel project
-- [ ] RabbitMQ packages install
-- [ ] `notifications` table migration + model
-- [ ] `ConsumeOrderEvents` Artisan command
-- [ ] `NotificationService` class (handleOrderPlaced, handleOrderDelivered)
-- [ ] APIs (list, mark-read, unread-count)
-- [ ] Test: Consumer chalaao → Order place karo → Notification ayi?
+### Phase 3 — Notification Service ✅ COMPLETE
+- [x] `notification-service` folder mein fresh Laravel project
+- [x] RabbitMQ packages install (`php-amqplib`)
+- [x] `notifications` table migration + model
+- [x] `ConsumeOrderEvents` Artisan command (topic exchange, order.* routing)
+- [x] `NotificationHandleService` (handleOrderPlaced, Delivered, Cancelled, Shipped)
+- [x] `NotificationJob` — DB mein save, with DB::transaction + failed() handler
+- [x] APIs: `/api/notification/get`, `/mark-as-read`, `/get-unread-count`
+- [x] Microservice auth (X-Microservice-Secret header)
+- [x] Test: Order place → RabbitMQ → Consumer → NotificationJob → DB ✅
 
 ### Phase 4 — Wallet Service
 - [ ] Fresh Laravel project
 - [ ] `seller_wallets`, `wallet_transactions`, `withdrawal_requests` migrations
-- [ ] Consumer: `order.delivered` → payout release
-- [ ] Consumer: `shop.approved` → wallet create
+- [ ] Consumer: `order.placed` → seller pending_balance update
+- [ ] Consumer: `order.delivered` → pending → withdrawable shift
+- [ ] Consumer: `order.cancelled` → pending_balance undo
+- [ ] Consumer: `shop.approved` → wallet record create
 - [ ] APIs: balance, transactions, withdraw, admin approval
 
 ### Phase 5 — Promotion Service

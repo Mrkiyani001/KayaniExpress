@@ -1,6 +1,7 @@
 <?php 
 namespace App\Services;
 
+use App\Models\User;
 use App\Notifications\SendOtpNotification;
 use App\Repository\AuthRepo;
 use Exception;
@@ -133,6 +134,15 @@ class AuthService{
             $user = $this->authRepo->change_password($data, $user);
             $user->password = Hash::make($data['password']);
             $user->save();
+            return $user;
+        }
+        catch(Exception $e){
+            throw new Exception($e->getMessage());
+        }
+    }
+    public function get_user($id){
+        try{
+            $user = $this->authRepo->get_user($id);
             return $user;
         }
         catch(Exception $e){

@@ -20,6 +20,7 @@ return Application::configure(basePath: dirname(__DIR__))
         });
         $middleware->alias([
             'single.device' => \App\Http\Middleware\SingleDeviceLogin::class,
+            'microservice.auth' => \App\Http\Middleware\microservice_auth::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

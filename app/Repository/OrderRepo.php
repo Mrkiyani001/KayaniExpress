@@ -99,7 +99,7 @@ class OrderRepo{
             'amount'   => $order->grand_total,
             'timestamp'=> now()->toISOString(),
         ];
-        PublishRabbitMQEvent::dispatch('order.cancelled', 'order.cancelled', $data);
+        PublishRabbitMQEvent::dispatch('order.events', 'order.cancelled', $data);
         return $order;
     }
     public function get_stuck_order(int $minutes){
@@ -127,7 +127,7 @@ class OrderRepo{
             'amount'   => $order_item->order->grand_total,
             'timestamp'=> now()->toISOString(),
         ];
-        PublishRabbitMQEvent::dispatch('order.' . $status, 'order.' . $status, $data);
+        PublishRabbitMQEvent::dispatch('order.events', 'order.' . $status, $data);
     }
     public function get_order($order){
         $orderItems = Order::with('items')->where('id', $order->id)->firstOrFail();

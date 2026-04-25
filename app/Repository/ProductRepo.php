@@ -55,13 +55,17 @@ class ProductRepo{
             if(!$shop){
                 throw new Exception('Shop not found');
             }
-            $category = Category::where('id', $data['category_id'])->first();
-            if(!$category){
-                throw new Exception('Category not found');
+            if (isset($data['category_id'])) {
+                $category = Category::where('id', $data['category_id'])->first();
+                if(!$category){
+                    throw new Exception('Category not found');
+                }
             }
-            $brand = Brand::where('id', $data['brand_id'])->first();
-            if(!$brand){
-                throw new Exception('Brand not found');
+            if (isset($data['brand_id'])) {
+                $brand = Brand::where('id', $data['brand_id'])->first();
+                if(!$brand){
+                    throw new Exception('Brand not found');
+                }
             }
             $product = Product::where('id', $data['id'])->firstOrFail();
             if($product->shop_id != $shop->id){

@@ -8,7 +8,7 @@ use Illuminate\Queue\InteractsWithQueue;
 
 use App\Services\RabbitMQService;
 
-class SendRabbitMQMessageListener implements ShouldQueue
+class SendRabbitMQMessageListener
 {
     public $rabbitmqService;
 

@@ -50,5 +50,8 @@ class AuthRepo{
         }
         return $user;
     }
-    
+    public function get_user($id){
+        $user = User::where('id', $id)->with('role')->firstOrFail();
+        return $user;
+    }
 }

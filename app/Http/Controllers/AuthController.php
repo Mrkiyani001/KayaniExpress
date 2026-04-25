@@ -168,4 +168,30 @@ class AuthController extends BaseController
             return $this->Response('error', 'Password change failed', $e->getMessage(), 500);
         }
     }
+
+    public function get_self(){
+        try{
+            $user = Auth::user();
+            if(!$user){
+                return $this->unauthorized();
+            }
+            $user = $this->authService->get_user($user->id);
+            return $this->Response('success', 'User fetched successfully', $user, 200);
+        }
+        catch(Exception $e){
+            return $this->Response('error', 'User not found', $e->getMessage(), 404);
+        }
+    }
+
+    // Internal endpoint — only accessible by microservices via X-Microservice-Secret header
+    public function get_user($id){
+        try{
+            $user = $this->authService->get_user($id);
+            return $this->Response('success', 'User fetched successfully', $user, 200);
+        }
+        catch(Exception $e){
+            return $this->Response('error', 'User not found', $e->getMessage(), 404);
+        }
+    }
+
 }

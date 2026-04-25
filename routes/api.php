@@ -25,10 +25,16 @@ Route::post('resend/otp', [AuthController::class, 'resendOtp']);
 Route::post('login', [AuthController::class, 'login']);
 Route::post('forget/password', [AuthController::class, 'forgetPassword']);
 Route::post('reset/password', [AuthController::class, 'resetPassword']);
-Route::group(['middleware' => ['auth:api','single.device']], function () {
+
+Route::group(['middleware' => ['microservice.auth']], function () {  // For Background Auth it protects from security risks
+    Route::get('internal/user/{id}', [AuthController::class, 'get_user']);
+});
+
+Route::group(['middleware' => ['auth:api','single.device']], function () { // For User Auth it protects from security risks
     Route::get('logout', [AuthController::class, 'logout']);
     Route::get('refresh/token', [AuthController::class, 'RefreshToken']);
     Route::post('change/password', [AuthController::class, 'changepassword']); // Keeping original casing as seen in AuthController
+    Route::get('user', [AuthController::class, 'get_self']);
     
     // Role & Permission Management Routes
     Route::prefix('role')->group(function () {
